@@ -3,7 +3,7 @@ package utils
 import authentikat.jwt.{JsonWebToken, JwtClaimsSet, JwtHeader}
 
 class JwtUtils {
-  val JwtSecretKey = "secretKey"
+  val JwtSecretKey = "detodo!!"
   val JwtSecretAlgo = "HS256"
 
   def createToken(payload: String): String = {
