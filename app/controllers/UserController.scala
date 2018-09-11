@@ -16,6 +16,12 @@ import scala.concurrent.ExecutionContext
 @Singleton
 class UserController @Inject()(auth: SecuredAuthenticator, userDao: UserDao, cc: ControllerComponents, implicit val ec: ExecutionContext) extends AbstractController(cc) {
 
+  def signIn = Action { implicit request =>
+    val user = request.body.asJson.get.as[User]
+    userDao.signIn(user)
+    Ok("signIn")
+  }
+
   def login: Action[AnyContent] = Action.async { implicit request =>
     val user = request.body.asJson.get.as[User]
 

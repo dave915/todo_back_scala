@@ -24,6 +24,10 @@ class Users(tag: Tag) extends Table[User](tag, "user") {
 class UserDao @Inject()(protected val dbConfigProvider: DatabaseConfigProvider) extends HasDatabaseConfigProvider[JdbcProfile] {
   val users = TableQuery[Users]
 
+  def signIn(user: User) = {
+    db.run(users += user)
+  }
+
   def getList = {
     db.run(users.result)
   }
