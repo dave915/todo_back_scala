@@ -14,11 +14,19 @@ import scala.concurrent.ExecutionContext
   * @date 2018. 9. 10.
   */
 @Singleton
-class UserController @Inject()(auth: SecuredAuthenticator, userDao: UserDao, cc: ControllerComponents, implicit val ec: ExecutionContext) extends AbstractController(cc) {
+class UserController @Inject()(auth: SecuredAuthenticator,
+                               userDao: UserDao,
+                               cc: ControllerComponents,
+                               implicit val ec: ExecutionContext) extends AbstractController(cc) {
 
   def signIn = Action { implicit request =>
     val user = request.body.asJson.get.as[User]
-    userDao.signIn(user)
+
+    try {
+      userDao.signIn(user)
+    } catch {
+      case e : Exception => println(e)
+    }
     Ok("signIn")
   }
 

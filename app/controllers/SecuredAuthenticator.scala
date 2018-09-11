@@ -33,7 +33,6 @@ class SecuredAuthenticator @Inject()(cc: ControllerComponents) extends AbstractC
     }
 
     override def parser: BodyParser[AnyContent] = cc.parsers.defaultBodyParser
-
     override protected def executionContext: ExecutionContext = cc.executionContext
   }
 

@@ -15,7 +15,8 @@ libraryDependencies ++= Seq( ehcache , ws , specs2 % Test , guice ,
   "com.typesafe.play" %% "play-slick-evolutions" % "3.0.3",
   "mysql" % "mysql-connector-java" % "5.1.42",
   "com.jason-goodwin" %% "authentikat-jwt" % "0.4.5",
-  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.9.6"
+  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.9.6",
+  "org.mindrot" % "jbcrypt" % "0.3m"
 )
 
 unmanagedResourceDirectories in Test <+=  baseDirectory ( _ /"target/web/public/test" )
