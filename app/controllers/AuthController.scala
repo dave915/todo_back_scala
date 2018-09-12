@@ -40,8 +40,9 @@ class AuthController @Inject()(auth: SecuredAuthenticator,
         Unauthorized("login fail")
       } else {
         val userInfo = user.get
-        Ok(Json.toJson(Map("result" -> "success"))).withCookies(
-          Cookie("jw_token", JwtUtils.createToken(Json.toJson(JwtPayload(userInfo.idx, userInfo.userName, userInfo.email)).toString()))
+        val payload = JwtPayload(userInfo.idx, userInfo.userName, userInfo.email)
+        Ok(Json.toJson(payload)).withCookies(
+          Cookie("jw_token", JwtUtils.createToken(Json.toJson(payload).toString()))
         )
       }
     }
