@@ -1,10 +1,10 @@
 package controllers
 
-import dao.UserDao
 import javax.inject.{Inject, Singleton}
 import models.{JwtPayload, User}
 import play.api.libs.json.Json
 import play.api.mvc._
+import service.AuthService
 import utils.JwtUtils
 
 import scala.concurrent.ExecutionContext
@@ -14,8 +14,8 @@ import scala.concurrent.ExecutionContext
   * @date 2018. 9. 10.
   */
 @Singleton
-class UserController @Inject()(auth: SecuredAuthenticator,
-                               userDao: UserDao,
+class AuthController @Inject()(auth: SecuredAuthenticator,
+                               authService: AuthService,
                                cc: ControllerComponents,
                                implicit val ec: ExecutionContext) extends AbstractController(cc) {
 
@@ -23,17 +23,19 @@ class UserController @Inject()(auth: SecuredAuthenticator,
     val user = request.body.asJson.get.as[User]
 
     try {
-      userDao.signIn(user)
+      authService.signIn(user)
+      Ok(Json.toJson(Map("result" -> "success")))
     } catch {
-      case e : Exception => println(e)
+      case e : Exception =>
+        println(e)
+        BadRequest(Json.toJson(Map("result" -> "fail")))
     }
-    Ok("signIn")
   }
 
   def login: Action[AnyContent] = Action.async { implicit request =>
     val user = request.body.asJson.get.as[User]
 
-    userDao.userCheck(user) map { user =>
+    authService.userCheck(user) map { user =>
       if (user.isEmpty) {
         Unauthorized("login fail")
       } else {

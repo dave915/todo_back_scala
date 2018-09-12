@@ -29,7 +29,10 @@ class UserDao @Inject()(protected val dbConfigProvider: DatabaseConfigProvider,
   val users = TableQuery[Users]
 
   def signIn(user: User) = {
-    db.run(users += user.copy(password = Some(BCrypt.hashpw(user.password.get, BCrypt.gensalt()))))
+    val action = (users returning users.map(_.idx) into((user, idx) => user.copy(idx = idx))) +=
+      user.copy(password = Some(BCrypt.hashpw(user.password.get, BCrypt.gensalt())))
+
+    db.run(action)
   }
 
   def getList = {
