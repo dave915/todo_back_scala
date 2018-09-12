@@ -4,10 +4,8 @@ import javax.inject.{Inject, Singleton}
 import models.Group
 import slick.lifted.Tag
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
-import slick.dbio.Effect
 import slick.jdbc.JdbcProfile
 import slick.jdbc.MySQLProfile.api._
-import slick.sql.FixedSqlAction
 
 import scala.concurrent.ExecutionContext
 
@@ -26,14 +24,24 @@ class Groups(tag: Tag) extends Table[Group](tag, "group") {
 class GroupDao @Inject()(protected val dbConfigProvider: DatabaseConfigProvider,
                           implicit val ec: ExecutionContext) extends HasDatabaseConfigProvider[JdbcProfile] {
   val groups = TableQuery[Groups]
+  val joinGroups = TableQuery[JoinGroups]
 
   def insert(groupName: String) = {
-    val action = (groups returning groups.map(_.idx) into ((group, idx) => group.copy(idx = idx))) +=
+    val query = (groups returning groups.map(_.idx) into ((group, idx) => group.copy(idx = idx))) +=
       Group(None, Some(groupName))
-    db.run(action)
+    db.run(query)
   }
 
   def delete(idx: Int): Unit = {
-    groups.filter(_.idx === idx).delete
+    db.run(groups.filter(_.idx === idx).delete)
+  }
+
+  def getJoinGroupByUserIdx(userIdx: Int) = {
+    val query = for {
+      j <- joinGroups.filter(_.userIdx === userIdx)
+      g <- groups
+    } yield (j, g)
+
+    db.run(query.result)
   }
 }
