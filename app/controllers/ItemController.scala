@@ -16,6 +16,12 @@ class ItemController @Inject()(auth: SecuredAuthenticator,
                                itemService: ItemService,
                                cc: ControllerComponents,
                                implicit val ec: ExecutionContext) extends AbstractController(cc) {
+  def getList(groupIdx: Int) = auth.JWTAuthentication.async { implicit request =>
+    itemService.getItemListByGroupIdx(groupIdx) map { item =>
+      Ok(Json.toJson(item))
+    }
+  }
+
   def save = auth.JWTAuthentication { implicit request =>
     val item = request.body.asJson.get.as[Item]
 

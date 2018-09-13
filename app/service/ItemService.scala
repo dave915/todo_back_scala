@@ -13,6 +13,10 @@ import scala.concurrent.ExecutionContext
 @Singleton
 class ItemService @Inject()(private val itemDao: ItemDao,
                             implicit val ec: ExecutionContext) {
+  def getItemListByGroupIdx(groupIdx: Int) = {
+    itemDao.getItemListByGroupIdx(groupIdx)
+  }
+
   def save(item: Item) = {
     itemDao.save(item)
   }
