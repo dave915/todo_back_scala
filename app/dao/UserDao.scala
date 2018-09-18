@@ -19,8 +19,9 @@ class Users(tag: Tag) extends Table[User](tag, "user") {
   def userName = column[Option[String]]("userName")
   def password = column[Option[String]]("password")
   def email = column[Option[String]]("email")
+  def refreshToken = column[Option[String]]("refreshToken")
 
-  override def * = (idx, userName, password, email) <> ((User.apply _).tupled, User.unapply)
+  override def * = (idx, userName, password, email, refreshToken) <> ((User.apply _).tupled, User.unapply)
 }
 
 @Singleton()
@@ -35,6 +36,10 @@ class UserDao @Inject()(protected val dbConfigProvider: DatabaseConfigProvider,
     db.run(query)
   }
 
+  def save(user: User) = {
+    db.run(users.filter(_.idx === user.idx).update(user))
+  }
+
   def getList = {
     db.run(users.result)
   }
@@ -46,5 +51,9 @@ class UserDao @Inject()(protected val dbConfigProvider: DatabaseConfigProvider,
       case Some(u) if BCrypt.checkpw(user.password.get, u.password.get) => Some(u)
       case _ => None
     }
+  }
+
+  def findByIdx(idx: Int) = {
+    db.run(users.filter(_.idx === idx).result.head)
   }
 }

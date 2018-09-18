@@ -1,5 +1,7 @@
 package controllers
 
+import java.util.{Calendar, Date}
+
 import javax.inject.{Inject, Singleton}
 import models.{JwtPayload, User}
 import play.api.libs.json.Json
@@ -37,19 +39,22 @@ class AuthController @Inject()(auth: SecuredAuthenticator,
 
     authService.userCheck(user) map { user =>
       if (user.isEmpty) {
-        Unauthorized("login fail")
+        Unauthorized(Json.toJson(Map("result" -> "fail")))
       } else {
         val userInfo = user.get
-        val payload = JwtPayload(userInfo.idx, userInfo.userName, userInfo.email)
-        Ok(Json.toJson(payload)).withCookies(
-          Cookie("jw_token", JwtUtils.createToken(Json.toJson(payload).toString()))
+        auth.setUserRefreshToken(userInfo.idx.get)
+        Ok(Json.toJson(Map("result" -> "success"))).withCookies(
+          Cookie("jwt_token", auth.makeNewJwtToken(userInfo))
         )
+
       }
     }
   }
 
   def logout = Action {
-    Ok("logout").discardingCookies(DiscardingCookie("jw_token"))
+    Ok("logout").withCookies(
+      Cookie("jwt_token", "")
+    )
   }
 
   def currentUserInfo = auth.JWTAuthentication{ implicit request =>
