@@ -56,6 +56,53 @@ class SecuredAuthenticator @Inject()(cc: ControllerComponents,
     JwtUtils.createToken(Json.toJson(payload).toString())
   }
 
+  def isExpireToken(tokenExpireDate: Date): Boolean = {
+    val current = new Date(System.currentTimeMillis())
+    current.after(tokenExpireDate)
+  }
+
+  def getNewToken(jwtPayload: JwtPayload): Option[String] = {
+    var refreshToken: Option[String] = None
+    var jedis: Option[Jedis] = None
+    var orgRefreshToken: Option[String] = None
+
+    try {
+      jedis = Some(jedisPool.getResource)
+      orgRefreshToken = Option(jedis.get.get(String.format(REDIS_REFRESH_TOKEN_KEY, jwtPayload.idx.get.toString)))
+        .fold(getDbRefreshToken(jwtPayload)) { token => Some(token) }
+    } finally {
+      if(jedis.isDefined) jedis.get.close()
+    }
+
+    if(orgRefreshToken.isDefined) {
+      val expireTime = orgRefreshToken.get.split("-")(5).toLong
+      val user = User(jwtPayload.idx, jwtPayload.userName, None, jwtPayload.email, None)
+      if (!isExpireToken(new Date(expireTime)))
+        refreshToken = Some(makeNewJwtToken(user))
+
+      extendRefreshToken(user, expireTime)
+    }
+
+    refreshToken
+  }
+
+  def getDbRefreshToken(jwtPayload: JwtPayload): Option[String] = {
+    var orgRefreshToken: Option[String] = None
+    val makeNewToken = userDao.findByIdx(jwtPayload.idx.get) map { user =>
+      user.refreshToken foreach { token => orgRefreshToken = Some(token)}
+    }
+    Await.result(makeNewToken, Duration.Inf)
+    orgRefreshToken
+  }
+
+  def extendRefreshToken(user: User, expireTime: Long): Unit = {
+    val expireTimeTerm = expireTime - System.currentTimeMillis() // 남은 만료시간
+
+    // refreshToken 만료시간이 0 ~ 10분 사이면 갱신
+    if (expireTimeTerm >= 0 && expireTimeTerm <= JWT_TOKEN_VALID_TERM_TIME_MILLIS)
+      setUserRefreshToken(user.idx.get)
+  }
+
   object JWTAuthentication extends ActionBuilder[UserRequest, AnyContent] {
     def invokeBlock[A](request: Request[A], block: UserRequest[A] => Future[Result]): Future[Result] = {
       val jwtToken = request.cookies.get("jwt_token").fold("")(cookie => cookie.value)
@@ -85,53 +132,6 @@ class SecuredAuthenticator @Inject()(cc: ControllerComponents,
         }
 
       }
-    }
-
-    def isExpireToken(tokenExpireDate: Date): Boolean = {
-      val current = new Date(System.currentTimeMillis())
-      current.after(tokenExpireDate)
-    }
-
-    def getNewToken(jwtPayload: JwtPayload): Option[String] = {
-      var refreshToken: Option[String] = None
-      var jedis: Option[Jedis] = None
-      var orgRefreshToken: Option[String] = None
-
-      try {
-        jedis = Some(jedisPool.getResource)
-        orgRefreshToken = Option(jedis.get.get(String.format(REDIS_REFRESH_TOKEN_KEY, jwtPayload.idx.get.toString)))
-          .fold(getDbRefreshToken(jwtPayload)) { token => Some(token) }
-      } finally {
-        if(jedis.isDefined) jedis.get.close()
-      }
-
-      if(orgRefreshToken.isDefined) {
-        val expireTime = orgRefreshToken.get.split("-")(5).toLong
-        val user = User(jwtPayload.idx, jwtPayload.userName, None, jwtPayload.email, None)
-        if (!isExpireToken(new Date(expireTime)))
-          refreshToken = Some(makeNewJwtToken(user))
-
-        extendRefreshToken(user, expireTime)
-      }
-
-      refreshToken
-    }
-
-    def getDbRefreshToken(jwtPayload: JwtPayload): Option[String] = {
-      var orgRefreshToken: Option[String] = None
-      val makeNewToken = userDao.findByIdx(jwtPayload.idx.get) map { user =>
-        user.refreshToken foreach { token => orgRefreshToken = Some(token)}
-      }
-      Await.result(makeNewToken, Duration.Inf)
-      orgRefreshToken
-    }
-
-    def extendRefreshToken(user: User, expireTime: Long): Unit = {
-      val expireTimeTerm = expireTime - System.currentTimeMillis() // 남은 만료시간
-
-      // refreshToken 만료시간이 0 ~ 10분 사이면 갱신
-      if (expireTimeTerm >= 0 && expireTimeTerm <= JWT_TOKEN_VALID_TERM_TIME_MILLIS)
-        setUserRefreshToken(user.idx.get)
     }
 
     override def parser: BodyParser[AnyContent] = cc.parsers.defaultBodyParser
