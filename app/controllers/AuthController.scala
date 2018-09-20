@@ -1,13 +1,10 @@
 package controllers
 
-import java.util.{Calendar, Date}
-
 import javax.inject.{Inject, Singleton}
-import models.{JwtPayload, User}
+import models.User
 import play.api.libs.json.Json
 import play.api.mvc._
 import service.AuthService
-import utils.JwtUtils
 
 import scala.concurrent.ExecutionContext
 
@@ -34,7 +31,7 @@ class AuthController @Inject()(auth: SecuredAuthenticator,
     }
   }
 
-  def login: Action[AnyContent] = Action.async { implicit request =>
+  def login = Action.async { implicit request =>
     val user = request.body.asJson.get.as[User]
 
     authService.userCheck(user) map { user =>

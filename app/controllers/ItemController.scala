@@ -3,7 +3,7 @@ package controllers
 import javax.inject.Inject
 import models.Item
 import play.api.libs.json.Json
-import play.api.mvc.{AbstractController, ControllerComponents}
+import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 import service.ItemService
 
 import scala.concurrent.ExecutionContext

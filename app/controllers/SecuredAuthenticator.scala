@@ -2,9 +2,8 @@ package controllers
 
 import java.util.{Date, UUID}
 
-import dao.UserDao
 import javax.inject.Inject
-import models.{JwtPayload, User}
+import models.{JwtPayload, User, UserDataAccess}
 import play.api.libs.json.{Json, OFormat}
 import play.api.mvc._
 import redis.clients.jedis.{Jedis, JedisPool}
@@ -17,7 +16,7 @@ case class UserRequest[A](user: User, request: Request[A]) extends WrappedReques
 
 class SecuredAuthenticator @Inject()(cc: ControllerComponents,
                                      implicit val ec: ExecutionContext,
-                                     userDao: UserDao,
+                                     userDataAccess: UserDataAccess,
                                      jedisPool: JedisPool) extends AbstractController(cc) {
 
   implicit val formatUserDetails: OFormat[User] = Json.format[User]
@@ -30,8 +29,8 @@ class SecuredAuthenticator @Inject()(cc: ControllerComponents,
   def setUserRefreshToken(userIdx: Int): Unit = {
     val expireTime = System.currentTimeMillis() + REFRESH_TOKEN_EXPIRE_TIME_MILLIS // 30분
     val refreshToken = makeNewRefreshToken(expireTime)
-    userDao.findByIdx(userIdx) map { user =>
-      userDao.save(user.copy(refreshToken = Some(refreshToken)))
+    userDataAccess.findByIdx(userIdx) map { user =>
+      userDataAccess.save(user.copy(refreshToken = Some(refreshToken)))
     }
 
     // redis 저장
@@ -88,7 +87,7 @@ class SecuredAuthenticator @Inject()(cc: ControllerComponents,
 
   def getDbRefreshToken(jwtPayload: JwtPayload): Option[String] = {
     var orgRefreshToken: Option[String] = None
-    val makeNewToken = userDao.findByIdx(jwtPayload.idx.get) map { user =>
+    val makeNewToken = userDataAccess.findByIdx(jwtPayload.idx.get) map { user =>
       user.refreshToken foreach { token => orgRefreshToken = Some(token)}
     }
     Await.result(makeNewToken, Duration.Inf)
