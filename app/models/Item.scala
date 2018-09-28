@@ -28,8 +28,9 @@ class ItemDataAccess @Inject()(protected val dbConfigProvider: DatabaseConfigPro
     db.run(items.filter(_.idx === idx).delete)
   }
 
-  def getItemListByGroupIdx(groupIdx: Int): Future[Seq[Item]] = {
-    db.run(items.filter(_.groupIdx === groupIdx).result)
+  def getItemListBySearchOption(itemSearchOption: ItemSearchOption): Future[Seq[Item]] = {
+    var query = items.filter(_.idx.nonEmpty) // 검색 옵션에 맞춰 filter 추가해야함
+    db.run(query.result)
   }
 }
 

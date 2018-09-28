@@ -1,7 +1,7 @@
 package service
 
 import javax.inject.{Inject, Singleton}
-import models.{Item, ItemDataAccess}
+import models.{Item, ItemDataAccess, ItemSearchOption}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -12,8 +12,8 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class ItemService @Inject()(private val itemDataAccess: ItemDataAccess,
                             implicit val ec: ExecutionContext) {
-  def getItemListByGroupIdx(groupIdx: Int): Future[Seq[Item]] = {
-    itemDataAccess.getItemListByGroupIdx(groupIdx)
+  def getItemList(itemSearchOption: ItemSearchOption): Future[Seq[Item]] = {
+    itemDataAccess.getItemListBySearchOption(itemSearchOption)
   }
 
   def save(item: Item): Future[Int] = {

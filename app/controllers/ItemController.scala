@@ -1,7 +1,7 @@
 package controllers
 
 import javax.inject.Inject
-import models.Item
+import models.{Item, ItemSearchOption}
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 import service.ItemService
@@ -17,7 +17,8 @@ class ItemController @Inject()(auth: SecuredAuthenticator,
                                cc: ControllerComponents,
                                implicit val ec: ExecutionContext) extends AbstractController(cc) {
   def getList(groupIdx: Int) = auth.JWTAuthentication.async { implicit request =>
-    itemService.getItemListByGroupIdx(groupIdx) map { item =>
+    val itemSearchOption = Json.toJson(request.queryString).as[ItemSearchOption]
+    itemService.getItemList(itemSearchOption) map { item =>
       Ok(Json.toJson(item))
     }
   }
