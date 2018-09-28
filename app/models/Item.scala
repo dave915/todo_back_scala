@@ -35,7 +35,7 @@ class ItemDataAccess @Inject()(protected val dbConfigProvider: DatabaseConfigPro
 
 case class Item(idx: Option[Int], groupIdx: Option[Int], title: Option[String], status: Option[Int],
                 memo: Option[String], tag: Option[String], `type`: Option[Int],
-                startDateTime: Option[Date], endDateTime: Option[Date])
+                itemDatetime: Option[Date])
 object Item {
   implicit val reads: Reads[Item] = Json.reads[Item]
   implicit val writes: OWrites[Item] = Json.writes[Item]
@@ -49,9 +49,8 @@ class Items(tag: Tag) extends Table[Item](tag, "item") {
   def memo = column[Option[String]]("memo")
   def itemTag = column[Option[String]]("tag")
   def `type` = column[Option[Int]]("type")
-  def startDatetime = column[Option[Date]]("startDatetime")
-  def endDatetime = column[Option[Date]]("endDatetime")
+  def itemDatetime = column[Option[Date]]("itemDatetime")
 
-  override def * = (idx, groupIdx, title, status, memo, itemTag, `type`, startDatetime, endDatetime) <>
+  override def * = (idx, groupIdx, title, status, memo, itemTag, `type`, itemDatetime) <>
     ((Item.apply _).tupled, Item.unapply)
 }
