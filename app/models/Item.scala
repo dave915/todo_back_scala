@@ -1,6 +1,7 @@
 package models
 
 import java.sql.Date
+import java.time.LocalDate
 
 import javax.inject.{Inject, Singleton}
 import slick.lifted.Tag
@@ -29,8 +30,36 @@ class ItemDataAccess @Inject()(protected val dbConfigProvider: DatabaseConfigPro
   }
 
   def getItemListBySearchOption(itemSearchOption: ItemSearchOption): Future[Seq[Item]] = {
-    var query = items.filter(_.idx.nonEmpty) // 검색 옵션에 맞춰 filter 추가해야함
-    db.run(query.result)
+    db.run(mappingSearchOption(itemSearchOption).result)
+  }
+
+  private def mappingSearchOption(itemSearchOption: ItemSearchOption) : Query[Items, Items#TableElementType, Seq] = {
+    var query = items.filter(_.groupIdx inSet itemSearchOption.groupIdxList.get)
+
+    query = itemSearchOption.itemType.fold(query)(itemType => query.filter(_.`type` === itemType))
+
+    query = itemSearchOption.startDate.fold(query) { startDate =>
+      val endDate : LocalDate = itemSearchOption.endDate.fold(startDate)(endDate => endDate)
+      query.filter { items =>
+          items.itemDatetime >= Date.valueOf(startDate) && items.itemDatetime <= Date.valueOf(endDate)
+        }
+    }
+
+    query = itemSearchOption.keyword.fold(query) { keyword =>
+      val likeKeyword = "%" + keyword + "%"
+      itemSearchOption.keywordType match {
+        case Some(1) => query.filter { items =>
+          items.itemTag.like(likeKeyword) || items.title.like(likeKeyword) || items.memo.like(likeKeyword)
+        }
+        case Some(2) => query.filter(_.itemTag.like(likeKeyword))
+        case Some(3) => query.filter { items =>
+          items.title.like(likeKeyword) || items.memo.like(likeKeyword)
+        }
+        case _ => query
+      }
+    }
+
+    query
   }
 }
 

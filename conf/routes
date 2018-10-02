@@ -16,7 +16,7 @@ GET     /userInfo                   controllers.AuthController.currentUserInfo
 POST    /item                       controllers.ItemController.save
 PUT     /item                       controllers.ItemController.save
 DELETE  /item/:idx                  controllers.ItemController.delete(idx:Int)
-GET     /item/group/:idx            controllers.ItemController.getList(idx:Int)
+GET     /item                       controllers.ItemController.getList
 
 # group
 GET     /group                      controllers.GroupController.getGroupByUserIdx

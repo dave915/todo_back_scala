@@ -3,7 +3,7 @@ package controllers
 import javax.inject.Inject
 import models.{Item, ItemSearchOption}
 import play.api.libs.json.Json
-import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
+import play.api.mvc.{AbstractController, ControllerComponents}
 import service.ItemService
 
 import scala.concurrent.ExecutionContext
@@ -16,9 +16,9 @@ class ItemController @Inject()(auth: SecuredAuthenticator,
                                itemService: ItemService,
                                cc: ControllerComponents,
                                implicit val ec: ExecutionContext) extends AbstractController(cc) {
-  def getList(groupIdx: Int) = auth.JWTAuthentication.async { implicit request =>
-    val itemSearchOption = Json.toJson(request.queryString).as[ItemSearchOption]
-    itemService.getItemList(itemSearchOption) map { item =>
+  def getList = auth.JWTAuthentication.async { implicit request =>
+    val itemSearchOption = ItemSearchOption.convert(request.queryString.map {case (k,v) => k -> v.mkString})
+    itemService.getItemList(itemSearchOption, request.user) map { item =>
       Ok(Json.toJson(item))
     }
   }
