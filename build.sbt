@@ -17,7 +17,8 @@ libraryDependencies ++= Seq( ws , specs2 % Test , guice ,
   "com.jason-goodwin" %% "authentikat-jwt" % "0.4.5",
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.9.6",
   "org.mindrot" % "jbcrypt" % "0.3m",
-  "jp.co.bizreach" %% "play-modules-redis" % "2.6.0"
+  "jp.co.bizreach" %% "play-modules-redis" % "2.6.0",
+  "com.typesafe.play" %% "play-logback" % "2.6.19"
 )
 
 unmanagedResourceDirectories in Test <+=  baseDirectory ( _ /"target/web/public/test" )

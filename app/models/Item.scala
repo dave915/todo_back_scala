@@ -69,6 +69,11 @@ case class Item(idx: Option[Int], groupIdx: Option[Int], title: Option[String], 
 object Item {
   implicit val reads: Reads[Item] = Json.reads[Item]
   implicit val writes: OWrites[Item] = Json.writes[Item]
+
+  def apply(idx: Option[Int], groupIdx: Option[Int], title: Option[String], status: Option[Int],
+            memo: Option[String], tag: Option[String], `type`: Option[Int],
+            itemDatetime: Option[Date]): Item =
+    new Item(idx, groupIdx, title, status.fold(Option(1))(i => Some(i)), memo, tag, `type`.fold(Option(1))(i => Some(i)), itemDatetime)
 }
 
 class Items(tag: Tag) extends Table[Item](tag, "item") {
