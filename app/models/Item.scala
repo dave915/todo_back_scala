@@ -38,6 +38,8 @@ class ItemDataAccess @Inject()(protected val dbConfigProvider: DatabaseConfigPro
 
     query = itemSearchOption.itemType.fold(query)(itemType => query.filter(_.`type` === itemType))
 
+    query = itemSearchOption.status.fold(query)(status => query.filter(_.status === status))
+
     query = itemSearchOption.startDate.fold(query) { startDate =>
       val endDate : LocalDate = itemSearchOption.endDate.fold(startDate)(endDate => endDate)
       query.filter { items =>
