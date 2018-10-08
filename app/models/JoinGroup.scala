@@ -18,9 +18,17 @@ class JoinGroupDataAccess @Inject()(protected val dbConfigProvider: DatabaseConf
                              implicit val ec: ExecutionContext) extends HasDatabaseConfigProvider[JdbcProfile] {
 
   val joinGroups = TableQuery[JoinGroups]
+  val users = TableQuery[Users]
 
   def insert(groupIdx: Int, userIdx: Int, `type`: Int): Unit = {
     db.run(joinGroups += JoinGroup(groupIdx, userIdx, `type`))
+  }
+
+  def getJoinUsers(groupIdx: Int) = {
+    val query = (joinGroups.filter(_.groupIdx === groupIdx) join users on (_.userIdx === _.idx))
+      .map { case (j, u) => u }
+
+    db.run(query.result)
   }
 }
 

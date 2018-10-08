@@ -9,7 +9,6 @@ import scala.concurrent.{ExecutionContext, Future}
 class GroupService @Inject()(private val groupDataAccess: GroupDataAccess,
                              private val joinGroupDataAccess: JoinGroupDataAccess,
                              implicit val ec: ExecutionContext) {
-
   def getJoinGroupByUserIdx(idx: Int): Future[Seq[GroupInfo]] = {
     groupDataAccess.getJoinGroupByUserIdx(idx) map { group =>
       group.map(groupInfo => {
@@ -22,5 +21,9 @@ class GroupService @Inject()(private val groupDataAccess: GroupDataAccess,
     groupDataAccess.insert(group.name.get, isDefaultGroup = false).onComplete { group =>
       joinGroupDataAccess.insert(group.get.idx.get, idx, 1)
     }
+  }
+
+  def getJoinUsers(groupIdx: Int) = {
+    joinGroupDataAccess.getJoinUsers(groupIdx)
   }
 }

@@ -6,7 +6,8 @@ import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 import slick.jdbc.MySQLProfile.api._
 import org.mindrot.jbcrypt.BCrypt
-import play.api.libs.json.{Json, OWrites, Reads}
+import play.api.libs.json._
+import play.api.libs.functional.syntax._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -46,13 +47,22 @@ class UserDataAccess @Inject()(protected val dbConfigProvider: DatabaseConfigPro
   def findByIdx(idx: Int): Future[User] = {
     db.run(users.filter(_.idx === idx).result.head)
   }
+
+  def findByEmailOrUserName(keyword: String) = {
+    val likeKeyword = "%" + keyword + "%"
+    db.run(users.filter(users => users.email.like(likeKeyword) || users.userName.like(likeKeyword)).result)
+  }
 }
 
 case class User(idx: Option[Int], userName: Option[String], password: Option[String], email: Option[String], refreshToken: Option[String])
 
 object User {
   implicit val reads: Reads[User] = Json.reads[User]
-  implicit val writes: OWrites[User] = Json.writes[User]
+  implicit val writes: Writes[User] = (
+    (JsPath \ "idx").write[Option[Int]] and
+      (JsPath \ "userName").write[Option[String]] and
+      (JsPath \ "email").write[Option[String]]
+  )(user => (user.idx, user.userName, user.email))
 }
 
 class Users(tag: Tag) extends Table[User](tag, "user") {

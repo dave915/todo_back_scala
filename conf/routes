@@ -12,6 +12,9 @@ POST    /login                      controllers.AuthController.login
 GET     /logout                     controllers.AuthController.logout
 GET     /userInfo                   controllers.AuthController.currentUserInfo
 
+#user
+GET     /users                      controllers.UserController.searchUser(keyword:String)
+
 # item
 POST    /item                       controllers.ItemController.save
 PUT     /item                       controllers.ItemController.save
@@ -21,6 +24,8 @@ GET     /item                       controllers.ItemController.getList
 # group
 GET     /group                      controllers.GroupController.getGroupByUserIdx
 POST    /group                      controllers.GroupController.addGroup
+GET     /group/:groupIdx/users      controllers.GroupController.getJoinUsers(groupIdx:Int)
+
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
 

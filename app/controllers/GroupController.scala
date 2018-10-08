@@ -34,4 +34,10 @@ class GroupController @Inject()(auth: SecuredAuthenticator,
         BadRequest(Json.toJson(Map("result" -> "fail")))
     }
   }
+
+  def getJoinUsers(groupIdx: Int) = auth.JWTAuthentication.async { implicit request =>
+    groupService.getJoinUsers(groupIdx) map { users =>
+      Ok(Json.toJson(users))
+    }
+  }
 }
