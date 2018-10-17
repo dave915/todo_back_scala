@@ -1,5 +1,7 @@
 package models
 
+import java.time.LocalDateTime
+
 import javax.inject.{Inject, Singleton}
 import slick.lifted.Tag
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
@@ -8,6 +10,8 @@ import slick.jdbc.JdbcProfile
 import slick.jdbc.MySQLProfile.api._
 
 import scala.concurrent.{ExecutionContext, Future}
+
+import utils.LocalDateTableConversions._
 
 /**
   * @author dave.th
@@ -21,7 +25,7 @@ class GroupDataAccess @Inject()(protected val dbConfigProvider: DatabaseConfigPr
 
   def insert(groupName: String, isDefaultGroup: Boolean): Future[Group] = {
     val query = (groups returning groups.map(_.idx) into ((group, idx) => group.copy(idx = idx))) +=
-      Group(None, Some(groupName), Some(isDefaultGroup))
+      Group(None, Some(groupName), Some(isDefaultGroup), Some(LocalDateTime.now()))
     db.run(query)
   }
 
@@ -37,7 +41,7 @@ class GroupDataAccess @Inject()(protected val dbConfigProvider: DatabaseConfigPr
   }
 }
 
-case class Group(idx: Option[Int], name: Option[String], isDefaultGroup: Option[Boolean])
+case class Group(idx: Option[Int], name: Option[String], isDefaultGroup: Option[Boolean], createAt: Option[LocalDateTime])
 
 object Group {
   implicit val reads: Reads[Group] = Json.reads[Group]
@@ -48,6 +52,7 @@ class Groups(tag: Tag) extends Table[Group](tag, "group") {
   def idx = column[Option[Int]]("idx", O.PrimaryKey, O.AutoInc)
   def name = column[Option[String]]("name")
   def isDefaultGroup = column[Option[Boolean]]("isDefaultGroup")
+  def createAt = column[Option[LocalDateTime]]("createAt")
 
-  override def * = (idx, name, isDefaultGroup) <> ((Group.apply _).tupled, Group.unapply)
+  override def * = (idx, name, isDefaultGroup, createAt) <> ((Group.apply _).tupled, Group.unapply)
 }

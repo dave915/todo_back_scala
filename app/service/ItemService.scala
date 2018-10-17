@@ -1,5 +1,7 @@
 package service
 
+import java.time.LocalDateTime
+
 import javax.inject.{Inject, Singleton}
 import models._
 
@@ -26,7 +28,8 @@ class ItemService @Inject()(private val itemDataAccess: ItemDataAccess,
   }
 
   def save(item: Item): Future[Int] = {
-    itemDataAccess.save(item)
+    val saveItem = if(item.idx.isEmpty) item.copy(createAt = Some(LocalDateTime.now())) else item
+    itemDataAccess.save(saveItem)
   }
 
   def delete(idx: Int): Future[Int] = {

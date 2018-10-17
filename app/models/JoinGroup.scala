@@ -1,5 +1,7 @@
 package models
 
+import java.time.LocalDateTime
+
 import javax.inject.{Inject, Singleton}
 import slick.lifted.Tag
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
@@ -8,6 +10,8 @@ import slick.jdbc.JdbcProfile
 import slick.jdbc.MySQLProfile.api._
 
 import scala.concurrent.ExecutionContext
+
+import utils.LocalDateTableConversions._
 
 /**
   * @author dave.th
@@ -20,19 +24,33 @@ class JoinGroupDataAccess @Inject()(protected val dbConfigProvider: DatabaseConf
   val joinGroups = TableQuery[JoinGroups]
   val users = TableQuery[Users]
 
-  def insert(groupIdx: Int, userIdx: Int, `type`: Int): Unit = {
-    db.run(joinGroups += JoinGroup(groupIdx, userIdx, `type`))
+  def save(joinGroup: JoinGroup): Unit = {
+    db.run(joinGroups insertOrUpdate joinGroup)
+  }
+
+  def delete(groupIdx: Int, userIdx: Int) = {
+    db.run(joinGroups.filter(joinGroup =>
+      joinGroup.groupIdx === groupIdx && joinGroup.userIdx === userIdx
+    ).delete)
   }
 
   def getJoinUsers(groupIdx: Int) = {
     val query = (joinGroups.filter(_.groupIdx === groupIdx) join users on (_.userIdx === _.idx))
-      .map { case (j, u) => u }
+      .map { case (j, u) => (u, j.createAt)}
 
     db.run(query.result)
   }
+
+  def checkJoinUser(groupIdx: Int, userIdx: Int) = {
+    val query = joinGroups.filter(joinGroups =>
+      joinGroups.groupIdx === groupIdx &&
+        joinGroups.userIdx === userIdx)
+
+    db.run(query.result.head)
+  }
 }
 
-case class JoinGroup(groupIdx: Int, userIdx: Int, `type`: Int)
+case class JoinGroup(groupIdx: Int, userIdx: Int, `type`: Int, createAt: LocalDateTime = LocalDateTime.now())
 
 object JoinGroup {
   implicit val reads: Reads[JoinGroup] = Json.reads[JoinGroup]
@@ -43,6 +61,7 @@ class JoinGroups(tag: Tag) extends Table[JoinGroup](tag, "join_group") {
   def groupIdx = column[Int]("groupIdx")
   def userIdx= column[Int]("userIdx")
   def `type` = column[Int]("type")
+  def createAt= column[LocalDateTime]("createAt")
 
-  override def * = (groupIdx, userIdx, `type`) <> ((JoinGroup.apply _).tupled, JoinGroup.unapply)
+  override def * = (groupIdx, userIdx, `type`, createAt) <> ((JoinGroup.apply _).tupled, JoinGroup.unapply)
 }

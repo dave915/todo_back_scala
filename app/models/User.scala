@@ -1,5 +1,7 @@
 package models
 
+import java.time.LocalDateTime
+
 import javax.inject.{Inject, Singleton}
 import slick.lifted.Tag
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
@@ -10,6 +12,8 @@ import play.api.libs.json._
 import play.api.libs.functional.syntax._
 
 import scala.concurrent.{ExecutionContext, Future}
+
+import utils.LocalDateTableConversions._
 
 /**
   * @author dave.th
@@ -22,7 +26,7 @@ class UserDataAccess @Inject()(protected val dbConfigProvider: DatabaseConfigPro
 
   def signIn(user: User): Future[User] = {
     val query = (users returning users.map(_.idx) into((user, idx) => user.copy(idx = idx))) +=
-      user.copy(password = Some(BCrypt.hashpw(user.password.get, BCrypt.gensalt())))
+      user.copy(password = Some(BCrypt.hashpw(user.password.get, BCrypt.gensalt())), createAt = Some(LocalDateTime.now()))
 
     db.run(query)
   }
@@ -54,7 +58,7 @@ class UserDataAccess @Inject()(protected val dbConfigProvider: DatabaseConfigPro
   }
 }
 
-case class User(idx: Option[Int], userName: Option[String], password: Option[String], email: Option[String], refreshToken: Option[String])
+case class User(idx: Option[Int], userName: Option[String], password: Option[String], email: Option[String], refreshToken: Option[String], createAt: Option[LocalDateTime])
 
 object User {
   implicit val reads: Reads[User] = Json.reads[User]
@@ -71,6 +75,7 @@ class Users(tag: Tag) extends Table[User](tag, "user") {
   def password = column[Option[String]]("password")
   def email = column[Option[String]]("email")
   def refreshToken = column[Option[String]]("refreshToken")
+  def createAt = column[Option[LocalDateTime]]("createAt")
 
-  override def * = (idx, userName, password, email, refreshToken) <> ((User.apply _).tupled, User.unapply)
+  override def * = (idx, userName, password, email, refreshToken, createAt) <> ((User.apply _).tupled, User.unapply)
 }

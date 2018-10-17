@@ -40,4 +40,48 @@ class GroupController @Inject()(auth: SecuredAuthenticator,
       Ok(Json.toJson(users))
     }
   }
+
+  def inviteUser(groupIdx: Int, userIdx: Int) = auth.JWTAuthentication { implicit request =>
+    try {
+      groupService.inviteUser(groupIdx, userIdx, request.user.idx.get)
+      Ok(Json.toJson(Map("result" -> "success")))
+    } catch {
+      case e : Exception =>
+        println(e)
+        BadRequest(Json.toJson(Map("result" -> "fail")))
+    }
+  }
+
+  def joinGroup(groupIdx: Int, userIdx:Int) = auth.JWTAuthentication { implicit request =>
+    try {
+      groupService.joinGroup(groupIdx, userIdx)
+      Ok(Json.toJson(Map("result" -> "success")))
+    } catch {
+      case e : Exception =>
+        println(e)
+        BadRequest(Json.toJson(Map("result" -> "fail")))
+    }
+  }
+
+  def changeGroupOwner(groupIdx: Int, userIdx: Int) = auth.JWTAuthentication { implicit request =>
+    try {
+      groupService.changeGroupOwner(groupIdx, userIdx, request.user.idx.get)
+      Ok(Json.toJson(Map("result" -> "success")))
+    } catch {
+      case e : Exception =>
+        println(e)
+        BadRequest(Json.toJson(Map("result" -> "fail")))
+    }
+  }
+
+  def leaveGroup(groupIdx: Int) = auth.JWTAuthentication { implicit request =>
+    try {
+      groupService.leaveGroup(groupIdx, request.user.idx.get)
+      Ok(Json.toJson(Map("result" -> "success")))
+    } catch {
+      case e : Exception =>
+        println(e)
+        BadRequest(Json.toJson(Map("result" -> "fail")))
+    }
+  }
 }

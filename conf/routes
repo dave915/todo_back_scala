@@ -26,6 +26,12 @@ GET     /group                      controllers.GroupController.getGroupByUserId
 POST    /group                      controllers.GroupController.addGroup
 GET     /group/:groupIdx/users      controllers.GroupController.getJoinUsers(groupIdx:Int)
 
+# joinGroup
+POST    /group/invite/:groupIdx/:userIdx    controllers.GroupController.inviteUser(groupIdx:Int, userIdx:Int)
+PUT     /group/join/:groupIdx/:userIdx      controllers.GroupController.joinGroup(groupIdx:Int, userIdx:Int)
+PUT     /group/owner/:groupIdx/:userIdx     controllers.GroupController.changeGroupOwner(groupIdx:Int, userIdx:Int)
+DELETE  /group/leave/:groupIdx              controllers.GroupController.leaveGroup(groupIdx:Int)
+
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
 

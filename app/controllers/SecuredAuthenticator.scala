@@ -75,7 +75,7 @@ class SecuredAuthenticator @Inject()(cc: ControllerComponents,
 
     if(orgRefreshToken.isDefined) {
       val expireTime = orgRefreshToken.get.split("-")(5).toLong
-      val user = User(jwtPayload.idx, jwtPayload.userName, None, jwtPayload.email, None)
+      val user = User(jwtPayload.idx, jwtPayload.userName, None, jwtPayload.email, None, None)
       if (!isExpireToken(new Date(expireTime)))
         refreshToken = Some(makeNewJwtToken(user))
 
@@ -121,7 +121,7 @@ class SecuredAuthenticator @Inject()(cc: ControllerComponents,
             return Future.successful(Unauthorized("Invalid credential"))
         }
 
-        val result = block(UserRequest(User(jwtPayload.idx, jwtPayload.userName, None, jwtPayload.email, None), request))
+        val result = block(UserRequest(User(jwtPayload.idx, jwtPayload.userName, None, jwtPayload.email, None, None), request))
         newJwtToken.fold(result) { token =>
           result map { futureResult =>
             futureResult.withCookies(

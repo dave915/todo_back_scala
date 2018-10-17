@@ -1,7 +1,7 @@
 package models
 
 import java.sql.Date
-import java.time.LocalDate
+import java.time.{LocalDate, LocalDateTime}
 
 import javax.inject.{Inject, Singleton}
 import slick.lifted.Tag
@@ -11,6 +11,8 @@ import slick.jdbc.JdbcProfile
 import slick.jdbc.MySQLProfile.api._
 
 import scala.concurrent.{ExecutionContext, Future}
+
+import utils.LocalDateTableConversions._
 
 /**
   * @author dave.th
@@ -67,15 +69,15 @@ class ItemDataAccess @Inject()(protected val dbConfigProvider: DatabaseConfigPro
 
 case class Item(idx: Option[Int], groupIdx: Option[Int], title: Option[String], status: Option[Int],
                 memo: Option[String], tag: Option[String], `type`: Option[Int],
-                itemDatetime: Option[Date])
+                itemDatetime: Option[Date], createAt: Option[LocalDateTime])
 object Item {
   implicit val reads: Reads[Item] = Json.reads[Item]
   implicit val writes: OWrites[Item] = Json.writes[Item]
 
   def apply(idx: Option[Int], groupIdx: Option[Int], title: Option[String], status: Option[Int],
             memo: Option[String], tag: Option[String], `type`: Option[Int],
-            itemDatetime: Option[Date]): Item =
-    new Item(idx, groupIdx, title, status.fold(Option(1))(i => Some(i)), memo, tag, `type`.fold(Option(1))(i => Some(i)), itemDatetime)
+            itemDatetime: Option[Date], createAt: Option[LocalDateTime]): Item =
+    new Item(idx, groupIdx, title, status.fold(Option(1))(i => Some(i)), memo, tag, `type`.fold(Option(1))(i => Some(i)), itemDatetime, createAt)
 }
 
 class Items(tag: Tag) extends Table[Item](tag, "item") {
@@ -87,7 +89,8 @@ class Items(tag: Tag) extends Table[Item](tag, "item") {
   def itemTag = column[Option[String]]("tag")
   def `type` = column[Option[Int]]("type")
   def itemDatetime = column[Option[Date]]("itemDatetime")
+  def createAt = column[Option[LocalDateTime]]("createAt")
 
-  override def * = (idx, groupIdx, title, status, memo, itemTag, `type`, itemDatetime) <>
+  override def * = (idx, groupIdx, title, status, memo, itemTag, `type`, itemDatetime, createAt) <>
     ((Item.apply _).tupled, Item.unapply)
 }

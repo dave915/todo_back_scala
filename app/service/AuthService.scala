@@ -1,7 +1,7 @@
 package service
 
 import javax.inject.{Inject, Singleton}
-import models.{GroupDataAccess, JoinGroupDataAccess, User, UserDataAccess}
+import models._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -15,12 +15,11 @@ class AuthService @Inject()(private val userDataAccess: UserDataAccess,
                             private val joinGroupDataAccess: JoinGroupDataAccess,
                             implicit val ec: ExecutionContext){
 
-  def signIn(user: User): Unit = {
-    userDataAccess.signIn(user).onComplete { newUser =>
-      groupDataAccess.insert(newUser.get.email.get, true).onComplete { group =>
-        joinGroupDataAccess.insert(group.get.idx.get, newUser.get.idx.get, 1)
-      }
-    }
+  def signIn(user: User) = {
+    for {
+      newUser <- userDataAccess.signIn(user)
+      group <- groupDataAccess.insert(newUser.email.get, isDefaultGroup = true)
+    } yield joinGroupDataAccess.save(JoinGroup(group.idx.get, newUser.idx.get, 1))
   }
 
   def userCheck(user: User): Future[Option[User]] = {
