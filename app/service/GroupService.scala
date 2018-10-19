@@ -23,6 +23,10 @@ class GroupService @Inject()(private val groupDataAccess: GroupDataAccess,
     }
   }
 
+  def updateGroup(group: Group) = {
+    groupDataAccess.update(group)
+  }
+
   def getJoinUsers(groupIdx: Int) = {
     joinGroupDataAccess.getJoinUsers(groupIdx).map { list =>
       list.unzip._1
@@ -31,30 +35,21 @@ class GroupService @Inject()(private val groupDataAccess: GroupDataAccess,
 
   def inviteUser(groupIdx: Int, userIdx: Int, requestUserId: Int) = {
 
-    for {
-      // request 유저가 그룹 오너의 요청인지 체크
+    val inviteUser = for {
       currentUser <- joinGroupDataAccess.checkJoinUser(groupIdx, requestUserId)
-    } yield {
-      if (currentUser.`type` == 1)
-        for {
-          // 이미 참여중인 유저인지 체크
-          inviteUser <- joinGroupDataAccess.checkJoinUser(groupIdx, userIdx)
-        } yield {
-          if(inviteUser eq null)
-            joinGroupDataAccess.save(JoinGroup(groupIdx, userIdx, 3))
-          else
-            throw new RuntimeException("이미 참여 중이거나 참여 진행중인 유저입니다.")
-        }
-      else
-        throw new RuntimeException("그룹 소유자가 아닙니다.")
-    }
+      if currentUser.`type` == 1
+      joinUser <- joinGroupDataAccess.checkJoinUser(groupIdx, userIdx)
+    } yield joinUser
+
+    if(inviteUser.value.isEmpty)
+      joinGroupDataAccess.save(JoinGroup(groupIdx, userIdx, 2))
   }
 
   def joinGroup(groupIdx: Int, userIdx: Int) = {
     joinGroupDataAccess.save(JoinGroup(groupIdx, userIdx, 2))
   }
 
-  def changeGroupOwner(groupIdx: Int, userIdx: Int, ownerIdx: Int) = {
+  def passGroupOwner(groupIdx: Int, userIdx: Int, ownerIdx: Int) = {
     joinGroupDataAccess.save(JoinGroup(groupIdx, userIdx, 1))
     joinGroupDataAccess.save(JoinGroup(groupIdx, ownerIdx, 2))
   }
@@ -68,5 +63,13 @@ class GroupService @Inject()(private val groupDataAccess: GroupDataAccess,
 
     newOwner.map(user => joinGroupDataAccess.save(JoinGroup(groupIdx, user.idx.get, 1)))
     joinGroupDataAccess.delete(groupIdx, userIdx)
+  }
+
+  def banishUser(groupIdx: Int, userIdx: Int, requestUserId: Int): Unit = {
+    for {
+      currentUser <- joinGroupDataAccess.checkJoinUser(groupIdx, requestUserId)
+      if currentUser.`type` == 1
+      result <- joinGroupDataAccess.delete(groupIdx, userIdx)
+    } yield result
   }
 }

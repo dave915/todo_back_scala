@@ -29,6 +29,11 @@ class GroupDataAccess @Inject()(protected val dbConfigProvider: DatabaseConfigPr
     db.run(query)
   }
 
+  def update(group: Group) = {
+    val q = for { g <- groups if g.idx === group.idx.get } yield g.name
+    db.run(q.update(group.name))
+  }
+
   def delete(idx: Int): Unit = {
     db.run(groups.filter(_.idx === idx).delete)
   }
