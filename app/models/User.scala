@@ -13,7 +13,7 @@ import play.api.libs.functional.syntax._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-import models.conversions.LocalDateTableConversions._
+import models.conversions.LocalDateTimeTableConversions._
 
 /**
   * @author dave.th

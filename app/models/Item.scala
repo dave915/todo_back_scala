@@ -1,7 +1,6 @@
 package models
 
-import java.sql.Timestamp
-import java.time.{LocalDate, LocalDateTime}
+import java.time.LocalDateTime
 
 import javax.inject.{Inject, Singleton}
 import slick.lifted.Tag
@@ -11,7 +10,7 @@ import slick.jdbc.JdbcProfile
 import slick.jdbc.MySQLProfile.api._
 
 import scala.concurrent.{ExecutionContext, Future}
-import models.conversions.LocalDateTableConversions._
+import models.conversions.LocalDateTimeTableConversions._
 
 /**
   * @author dave.th

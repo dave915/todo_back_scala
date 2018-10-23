@@ -11,7 +11,7 @@ import slick.jdbc.MySQLProfile.api._
 
 import scala.concurrent.ExecutionContext
 
-import models.conversions.LocalDateTableConversions._
+import models.conversions.LocalDateTimeTableConversions._
 
 /**
   * @author dave.th
