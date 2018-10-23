@@ -36,6 +36,19 @@ class ItemController @Inject()(auth: SecuredAuthenticator,
     }
   }
 
+  def addRepeatItem = auth.JWTAuthentication { implicit request =>
+    val item = request.body.asJson.get.as[Item]
+
+    try {
+      itemService.addRepeatItem(item)
+      Ok(Json.toJson(Map("result" -> "success")))
+    } catch {
+      case e : Exception =>
+        println(e)
+        BadRequest(Json.toJson(Map("result" -> "fail")))
+    }
+  }
+
   def delete(idx: Int) = auth.JWTAuthentication {
     try {
       itemService.delete(idx)

@@ -18,6 +18,7 @@ GET     /users                      controllers.UserController.searchUser(keywor
 # item
 POST    /item                       controllers.ItemController.save
 PUT     /item                       controllers.ItemController.save
+POST    /repeatItem                 controllers.ItemController.addRepeatItem
 DELETE  /item/:idx                  controllers.ItemController.delete(idx:Int)
 GET     /item                       controllers.ItemController.getList
 

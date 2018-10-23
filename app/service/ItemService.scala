@@ -29,10 +29,6 @@ class ItemService @Inject()(private val itemDataAccess: ItemDataAccess,
 
   def save(item: Item): Future[Int] = {
     val saveItem = if(item.idx.isEmpty) item.copy(createAt = Some(LocalDateTime.now())) else item
-
-    if(item.status.equals(Option(2)) && saveItem.status.equals(Option(3)))
-      addRepeatItem(item)
-
     itemDataAccess.save(saveItem)
   }
 
