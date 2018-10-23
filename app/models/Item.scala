@@ -1,6 +1,6 @@
 package models
 
-import java.sql.Date
+import java.sql.Timestamp
 import java.time.{LocalDate, LocalDateTime}
 
 import javax.inject.{Inject, Singleton}
@@ -11,8 +11,7 @@ import slick.jdbc.JdbcProfile
 import slick.jdbc.MySQLProfile.api._
 
 import scala.concurrent.{ExecutionContext, Future}
-
-import utils.LocalDateTableConversions._
+import models.conversions.LocalDateTableConversions._
 
 /**
   * @author dave.th
@@ -43,9 +42,9 @@ class ItemDataAccess @Inject()(protected val dbConfigProvider: DatabaseConfigPro
     query = itemSearchOption.status.fold(query)(status => query.filter(_.status === status))
 
     query = itemSearchOption.startDate.fold(query) { startDate =>
-      val endDate : LocalDate = itemSearchOption.endDate.fold(startDate)(endDate => endDate)
+      val endDate : LocalDateTime = itemSearchOption.endDate.fold(startDate)(endDate => endDate)
       query.filter { items =>
-          items.itemDatetime >= Date.valueOf(startDate) && items.itemDatetime <= Date.valueOf(endDate)
+          items.itemDatetime >= startDate && items.itemDatetime <= endDate
         }
     }
 
@@ -68,16 +67,17 @@ class ItemDataAccess @Inject()(protected val dbConfigProvider: DatabaseConfigPro
 }
 
 case class Item(idx: Option[Int], groupIdx: Option[Int], title: Option[String], status: Option[Int],
-                memo: Option[String], tag: Option[String], `type`: Option[Int],
-                itemDatetime: Option[Date], createAt: Option[LocalDateTime])
+                memo: Option[String], tag: Option[String], `type`: Option[Int], repeatType: Option[Int],
+                itemDatetime: Option[LocalDateTime], createAt: Option[LocalDateTime])
 object Item {
   implicit val reads: Reads[Item] = Json.reads[Item]
   implicit val writes: OWrites[Item] = Json.writes[Item]
 
   def apply(idx: Option[Int], groupIdx: Option[Int], title: Option[String], status: Option[Int],
-            memo: Option[String], tag: Option[String], `type`: Option[Int],
-            itemDatetime: Option[Date], createAt: Option[LocalDateTime]): Item =
-    new Item(idx, groupIdx, title, status.fold(Option(1))(i => Some(i)), memo, tag, `type`.fold(Option(1))(i => Some(i)), itemDatetime, createAt)
+            memo: Option[String], tag: Option[String], `type`: Option[Int], repeatType: Option[Int],
+            itemDatetime: Option[LocalDateTime], createAt: Option[LocalDateTime]): Item =
+    new Item(idx, groupIdx, title, status.fold(Option(1))(i => Some(i)), memo, tag, `type`.fold(Option(1))(i => Some(i)),
+      repeatType.fold(Option(0))(i => Some(i)), itemDatetime, createAt)
 }
 
 class Items(tag: Tag) extends Table[Item](tag, "item") {
@@ -88,9 +88,10 @@ class Items(tag: Tag) extends Table[Item](tag, "item") {
   def memo = column[Option[String]]("memo")
   def itemTag = column[Option[String]]("tag")
   def `type` = column[Option[Int]]("type")
-  def itemDatetime = column[Option[Date]]("itemDatetime")
+  def repeatType = column[Option[Int]]("repeatType")
+  def itemDatetime = column[Option[LocalDateTime]]("itemDatetime")
   def createAt = column[Option[LocalDateTime]]("createAt")
 
-  override def * = (idx, groupIdx, title, status, memo, itemTag, `type`, itemDatetime, createAt) <>
+  override def * = (idx, groupIdx, title, status, memo, itemTag, `type`, repeatType, itemDatetime, createAt) <>
     ((Item.apply _).tupled, Item.unapply)
 }

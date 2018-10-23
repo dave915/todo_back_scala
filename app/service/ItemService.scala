@@ -29,7 +29,24 @@ class ItemService @Inject()(private val itemDataAccess: ItemDataAccess,
 
   def save(item: Item): Future[Int] = {
     val saveItem = if(item.idx.isEmpty) item.copy(createAt = Some(LocalDateTime.now())) else item
+
+    if(item.status.equals(Option(2)) && saveItem.status.equals(Option(3)))
+      addRepeatItem(item)
+
     itemDataAccess.save(saveItem)
+  }
+
+  def addRepeatItem(item: Item): Any = {
+    val nextItemDateTime = item.repeatType.get match {
+      case 1 => item.itemDatetime.get.plusDays(1)
+      case 2 => item.itemDatetime.get.plusWeeks(1)
+      case 3 => item.itemDatetime.get.plusMonths(1)
+      case 4 => item.itemDatetime.get.plusYears(1)
+      case _ => null
+    }
+
+    if(nextItemDateTime != null)
+      itemDataAccess.save(item.copy(idx = None, itemDatetime = Some(nextItemDateTime), createAt = Some(LocalDateTime.now())))
   }
 
   def delete(idx: Int): Future[Int] = {

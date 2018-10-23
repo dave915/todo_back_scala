@@ -1,10 +1,11 @@
-package utils
+package models.conversions
 
 import java.sql.Timestamp
 import java.time.LocalDateTime
 
 import slick.ast.BaseTypedType
 import slick.jdbc.JdbcType
+
 import slick.jdbc.MySQLProfile.api._
 
 /**
