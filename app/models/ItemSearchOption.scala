@@ -1,6 +1,7 @@
 package models
 
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 import play.api.libs.json.{Json, OWrites, Reads}
 
@@ -15,9 +16,11 @@ object ItemSearchOption {
   implicit val reads: Reads[ItemSearchOption] = Json.reads[ItemSearchOption]
   implicit val writes: OWrites[ItemSearchOption] = Json.writes[ItemSearchOption]
 
+  val dateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+
   def convert(map: Map[String, String]): ItemSearchOption = {
-    val startDate = map.get("startDate").map(i => LocalDateTime.parse(i))
-    val endDate = map.get("endDate").map(i => LocalDateTime.parse(i))
+    val startDate = map.get("startDate").map(i => LocalDateTime.parse(i, dateTimeFormatter))
+    val endDate = map.get("endDate").map(i => LocalDateTime.parse(i, dateTimeFormatter))
     val status = map.get("status").map(i => i.toInt)
     val groupIdx = map.get("groupIdx").map(i => i.toInt)
     val keywordType = map.get("keywordType").fold(Some(1))(i => Some(i.toInt))

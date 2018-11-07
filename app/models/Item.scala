@@ -43,7 +43,7 @@ class ItemDataAccess @Inject()(protected val dbConfigProvider: DatabaseConfigPro
     query = itemSearchOption.startDate.fold(query) { startDate =>
       val endDate : LocalDateTime = itemSearchOption.endDate.fold(startDate)(endDate => endDate)
       query.filter { items =>
-          items.itemDatetime >= startDate && items.itemDatetime <= endDate
+          items.itemDatetime >= startDate && items.itemDatetime < endDate.plusDays(1)
         }
     }
 
