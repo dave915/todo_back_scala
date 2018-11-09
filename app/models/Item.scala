@@ -1,16 +1,18 @@
 package models
 
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 import javax.inject.{Inject, Singleton}
 import slick.lifted.Tag
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
-import play.api.libs.json.{Json, OWrites, Reads}
+import play.api.libs.json.{JsPath, Json, OWrites, Reads}
 import slick.jdbc.JdbcProfile
 import slick.jdbc.MySQLProfile.api._
 
 import scala.concurrent.{ExecutionContext, Future}
 import models.conversions.LocalDateTimeTableConversions._
+import play.api.libs.functional.syntax._
 
 /**
   * @author dave.th
@@ -69,14 +71,25 @@ case class Item(idx: Option[Int], groupIdx: Option[Int], title: Option[String], 
                 memo: Option[String], tag: Option[String], `type`: Option[Int], repeatType: Option[Int],
                 itemDatetime: Option[LocalDateTime], createAt: Option[LocalDateTime])
 object Item {
-  implicit val reads: Reads[Item] = Json.reads[Item]
+  val dateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm:ss")
   implicit val writes: OWrites[Item] = Json.writes[Item]
 
-  def apply(idx: Option[Int], groupIdx: Option[Int], title: Option[String], status: Option[Int],
-            memo: Option[String], tag: Option[String], `type`: Option[Int], repeatType: Option[Int],
-            itemDatetime: Option[LocalDateTime], createAt: Option[LocalDateTime]): Item =
-    new Item(idx, groupIdx, title, status.fold(Option(1))(i => Some(i)), memo, tag, `type`.fold(Option(1))(i => Some(i)),
-      repeatType.fold(Option(0))(i => Some(i)), itemDatetime, createAt)
+  implicit val reads: Reads[Item] = (
+    (JsPath \ "idx").readNullable[Int] and
+      (JsPath \ "groupIdx").readNullable[Int] and
+      (JsPath \ "title").readNullable[String] and
+      (JsPath \ "status").readWithDefault[Int](1) and
+      (JsPath \ "memo").readNullable[String] and
+      (JsPath \ "tag").readNullable[String] and
+      (JsPath \ "type").readWithDefault[Int](1) and
+      (JsPath \ "repeatType").readWithDefault[Int](0) and
+      (JsPath \ "itemDatetime").readNullable[String] and
+      (JsPath \ "createAt").readNullable[String]
+  )((idx: Option[Int], groupIdx: Option[Int], title: Option[String], status: Int,
+     memo: Option[String], tag: Option[String], `type`: Int, repeatType: Int,
+     itemDatetime: Option[String], createAt: Option[String]) =>
+    Item(idx, groupIdx, title, Option(status), memo, tag, Option(`type`),
+      Option(repeatType), itemDatetime.map(i => LocalDateTime.parse(i, dateTimeFormatter)), createAt.map(i => LocalDateTime.parse(i, dateTimeFormatter))))
 }
 
 class Items(tag: Tag) extends Table[Item](tag, "item") {

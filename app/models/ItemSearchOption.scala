@@ -16,7 +16,7 @@ object ItemSearchOption {
   implicit val reads: Reads[ItemSearchOption] = Json.reads[ItemSearchOption]
   implicit val writes: OWrites[ItemSearchOption] = Json.writes[ItemSearchOption]
 
-  val dateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+  val dateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm:ss")
 
   def convert(map: Map[String, String]): ItemSearchOption = {
     val startDate = map.get("startDate").map(i => LocalDateTime.parse(i, dateTimeFormatter))
