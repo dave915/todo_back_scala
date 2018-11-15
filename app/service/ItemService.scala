@@ -42,7 +42,7 @@ class ItemService @Inject()(private val itemDataAccess: ItemDataAccess,
     }
 
     if(nextItemDateTime != null)
-      itemDataAccess.save(item.copy(idx = None, itemDatetime = Some(nextItemDateTime), createAt = Some(LocalDateTime.now())))
+      itemDataAccess.save(item.copy(idx = None, status = Some(1), itemDatetime = Some(nextItemDateTime), createAt = Some(LocalDateTime.now())))
   }
 
   def delete(idx: Int): Future[Int] = {
