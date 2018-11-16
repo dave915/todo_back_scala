@@ -5,6 +5,7 @@ import models.User
 import play.api.libs.json.Json
 import play.api.mvc._
 import service.AuthService
+import utils.SendMailSMTP
 
 import scala.concurrent.ExecutionContext
 
@@ -16,6 +17,7 @@ import scala.concurrent.ExecutionContext
 class AuthController @Inject()(auth: SecuredAuthenticator,
                                authService: AuthService,
                                cc: ControllerComponents,
+                               sendMailSMTP: SendMailSMTP,
                                implicit val ec: ExecutionContext) extends AbstractController(cc) {
 
   def signIn = Action { implicit request =>
@@ -56,5 +58,11 @@ class AuthController @Inject()(auth: SecuredAuthenticator,
 
   def currentUserInfo = auth.JWTAuthentication{ implicit request =>
     Ok(Json.toJson(request.user))
+  }
+
+  def mailTest = auth.JWTAuthentication{ implicit  request =>
+
+    sendMailSMTP.sendMail("dave.th@kakaocorp.com", "<우리 오늘 뭐해?> 그룹초대", views.html.groupInvite("텍스트11", "http://www.naver.com").toString())
+    Ok(Json.toJson("success"))
   }
 }

@@ -18,7 +18,10 @@ libraryDependencies ++= Seq( ws , specs2 % Test , guice ,
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.9.6",
   "org.mindrot" % "jbcrypt" % "0.3m",
   "jp.co.bizreach" %% "play-modules-redis" % "2.6.0",
-  "com.typesafe.play" %% "play-logback" % "2.6.19"
+  "com.typesafe.play" %% "play-logback" % "2.6.19",
+  "com.typesafe.play" %% "play-mailer" % "6.0.1",
+  "com.typesafe.play" %% "play-mailer-guice" % "6.0.1"
+
 )
 
 unmanagedResourceDirectories in Test <+=  baseDirectory ( _ /"target/web/public/test" )
