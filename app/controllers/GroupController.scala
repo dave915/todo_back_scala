@@ -65,6 +65,17 @@ class GroupController @Inject()(auth: SecuredAuthenticator,
     }
   }
 
+  def checkInvite(inviteCode: String) = Action { implicit request =>
+    try {
+      groupService.checkInvite(inviteCode)
+      Ok(Json.toJson(Map("result" -> "success")))
+    } catch {
+      case e : Exception =>
+        println(e)
+        BadRequest(Json.toJson(Map("result" -> "fail")))
+    }
+  }
+
   def joinGroup(groupIdx: Int, userIdx:Int) = auth.JWTAuthentication { implicit request =>
     try {
       groupService.joinGroup(groupIdx, userIdx)

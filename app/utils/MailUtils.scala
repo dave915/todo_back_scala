@@ -10,7 +10,7 @@ import play.api.libs.mailer.{Email, MailerClient}
 trait SendMail {
   def sendMail(to: String, subject: String, message: String)
 }
-class SendMailSMTP @Inject()(mailerClient: MailerClient) extends SendMail {
+class MailUtils @Inject()(mailerClient: MailerClient) extends SendMail {
 
   override def sendMail(to: String, subject: String, message: String) = {
     val email = Email(

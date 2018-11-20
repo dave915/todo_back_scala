@@ -38,6 +38,10 @@ class GroupDataAccess @Inject()(protected val dbConfigProvider: DatabaseConfigPr
     db.run(groups.filter(_.idx === idx).delete)
   }
 
+  def findByIdx(idx: Int): Future[Group] = {
+    db.run(groups.filter(_.idx === idx).result.head)
+  }
+
   def getJoinGroupByUserIdx(userIdx: Int): Future[Seq[(Group, Int)]] = {
     val query = (joinGroups.filter(_.userIdx === userIdx) join groups on (_.groupIdx === _.idx))
       .map{ case (j, g) => (g, j.`type`)}

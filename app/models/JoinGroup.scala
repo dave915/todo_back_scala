@@ -1,17 +1,18 @@
 package models
 
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 import javax.inject.{Inject, Singleton}
 import slick.lifted.Tag
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
-import play.api.libs.json.{Json, OWrites, Reads}
+import play.api.libs.json._
 import slick.jdbc.JdbcProfile
 import slick.jdbc.MySQLProfile.api._
 
 import scala.concurrent.ExecutionContext
-
 import models.conversions.LocalDateTimeTableConversions._
+import play.api.libs.functional.syntax._
 
 /**
   * @author dave.th
@@ -36,7 +37,7 @@ class JoinGroupDataAccess @Inject()(protected val dbConfigProvider: DatabaseConf
 
   def getJoinUsers(groupIdx: Int) = {
     val query = (joinGroups.filter(_.groupIdx === groupIdx) join users on (_.userIdx === _.idx))
-      .map { case (j, u) => (u, j.createAt)}
+      .map { case (j, u) => (u, j)}
 
     db.run(query.result)
   }
@@ -53,8 +54,17 @@ class JoinGroupDataAccess @Inject()(protected val dbConfigProvider: DatabaseConf
 case class JoinGroup(groupIdx: Int, userIdx: Int, `type`: Int, createAt: LocalDateTime = LocalDateTime.now())
 
 object JoinGroup {
-  implicit val reads: Reads[JoinGroup] = Json.reads[JoinGroup]
-  implicit val writes: OWrites[JoinGroup] = Json.writes[JoinGroup]
+  implicit val reads: Reads[JoinGroup] = (
+    (JsPath \ "groupIdx").read[Int] and
+      (JsPath \ "userIdx").read[Int] and
+      (JsPath \ "type").read[Int]
+  )((groupIdx: Int, userIdx: Int, `type`: Int) => JoinGroup(groupIdx, userIdx, `type`))
+
+  implicit val writes: OWrites[JoinGroup] = (o: JoinGroup) => Json.obj(
+    "groupIdx" -> o.groupIdx,
+    "userIdx" -> o.userIdx,
+    "type" -> o.`type`,
+  )
 }
 
 class JoinGroups(tag: Tag) extends Table[JoinGroup](tag, "join_group") {
