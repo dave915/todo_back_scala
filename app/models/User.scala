@@ -35,6 +35,11 @@ class UserDataAccess @Inject()(protected val dbConfigProvider: DatabaseConfigPro
     db.run(users.filter(_.idx === user.idx).update(user))
   }
 
+  def passwordUpdate(user: User): Future[Int] = {
+    val q = for { u <- users if u.idx === user.idx.get } yield u.password
+    db.run(q.update(Some(BCrypt.hashpw(user.password.get, BCrypt.gensalt()))))
+  }
+
   def getList: Future[Seq[User]] = {
     db.run(users.result)
   }
@@ -55,6 +60,10 @@ class UserDataAccess @Inject()(protected val dbConfigProvider: DatabaseConfigPro
   def findByEmailOrUserName(keyword: String) = {
     val likeKeyword = "%" + keyword + "%"
     db.run(users.filter(users => users.email.like(likeKeyword) || users.userName.like(likeKeyword)).result)
+  }
+
+  def findByEmail(email: String) = {
+    db.run(users.filter(users => users.email === email).result)
   }
 }
 
