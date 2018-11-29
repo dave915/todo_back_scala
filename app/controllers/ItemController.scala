@@ -23,40 +23,31 @@ class ItemController @Inject()(auth: SecuredAuthenticator,
     }
   }
 
-  def save = auth.JWTAuthentication { implicit request =>
+  def save = auth.JWTAuthentication.async { implicit request =>
     val item = request.body.asJson.get.as[Item]
 
-    try {
-      itemService.save(item)
-      Ok(Json.toJson(Map("result" -> "success")))
-    } catch {
-      case e : Exception =>
-        println(e)
-        BadRequest(Json.toJson(Map("result" -> "fail")))
-    }
+    itemService.save(item)
+      .map( _ => Ok(Json.toJson(Map("result" -> "success"))))
+      .recover {
+        case e: Exception => BadRequest(Json.toJson(Map("result" -> "fail")))
+      }
   }
 
-  def addRepeatItem = auth.JWTAuthentication { implicit request =>
+  def addRepeatItem = auth.JWTAuthentication.async { implicit request =>
     val item = request.body.asJson.get.as[Item]
 
-    try {
-      itemService.addRepeatItem(item)
-      Ok(Json.toJson(Map("result" -> "success")))
-    } catch {
-      case e : Exception =>
-        println(e)
-        BadRequest(Json.toJson(Map("result" -> "fail")))
-    }
+    itemService.addRepeatItem(item)
+      .map( _ => Ok(Json.toJson(Map("result" -> "success"))))
+      .recover {
+        case e: Exception => BadRequest(Json.toJson(Map("result" -> "fail")))
+      }
   }
 
-  def delete(idx: Int) = auth.JWTAuthentication {
-    try {
-      itemService.delete(idx)
-      Ok(Json.toJson(Map("result" -> "success")))
-    } catch {
-      case e : Exception =>
-        println(e)
-        BadRequest(Json.toJson(Map("result" -> "fail")))
-    }
+  def delete(idx: Int) = auth.JWTAuthentication.async {
+    itemService.delete(idx)
+      .map( _ => Ok(Json.toJson(Map("result" -> "success"))))
+      .recover {
+        case e: Exception => BadRequest(Json.toJson(Map("result" -> "fail")))
+      }
   }
 }

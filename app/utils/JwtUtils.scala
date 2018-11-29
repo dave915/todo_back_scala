@@ -1,7 +1,9 @@
 package utils
 
 import authentikat.jwt.{JsonWebToken, JwtClaimsSet, JwtHeader}
+import javax.inject.Singleton
 
+@Singleton
 class JwtUtils {
   val JwtSecretKey = "detodo!!"
   val JwtSecretAlgo = "HS256"

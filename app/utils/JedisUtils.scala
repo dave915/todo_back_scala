@@ -1,0 +1,58 @@
+package utils
+
+import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper}
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
+import javax.inject.{Inject, Singleton}
+import redis.clients.jedis.{Jedis, JedisPool}
+
+/**
+  * @author dave.th
+  * @date 29/11/2018
+  */
+@Singleton
+class JedisUtils @Inject()(private val jedisPool: JedisPool) {
+  def set(key: String, obj: Object): Unit = {
+    var jedis: Option[Jedis] = None
+    try {
+      jedis = Some(jedisPool.getResource)
+      val objectMapper = new ObjectMapper() with ScalaObjectMapper
+      objectMapper.registerModule(DefaultScalaModule)
+      objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+      val objectString = objectMapper.writeValueAsString(obj)
+
+      jedis.get.set(key, objectString)
+    } finally {
+      if(jedis.nonEmpty) jedis.get.close()
+    }
+  }
+
+  def get(key: String): String = {
+    var jedis: Option[Jedis] = None
+    var result: String = ""
+    try {
+      jedis = Some(jedisPool.getResource)
+      result = jedis.get.get(key)
+    } finally {
+      if(jedis.nonEmpty) jedis.get.close()
+    }
+
+    result
+  }
+
+  def setWithExpire(key: String, obj: Object, second: Int): Unit = {
+    var jedis: Option[Jedis] = None
+    try {
+      jedis = Some(jedisPool.getResource)
+      val objectMapper = new ObjectMapper() with ScalaObjectMapper
+      objectMapper.registerModule(DefaultScalaModule)
+      objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+      val objectString = objectMapper.writeValueAsString(obj)
+
+      jedis.get.set(key, objectString)
+      jedis.get.expire(key, second)
+    } finally {
+      if(jedis.nonEmpty) jedis.get.close()
+    }
+  }
+}

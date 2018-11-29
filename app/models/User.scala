@@ -24,7 +24,7 @@ class UserDataAccess @Inject()(protected val dbConfigProvider: DatabaseConfigPro
                         implicit val ec: ExecutionContext) extends HasDatabaseConfigProvider[JdbcProfile] {
   val users = TableQuery[Users]
 
-  def signIn(user: User): Future[User] = {
+  def signUp(user: User): Future[User] = {
     val query = (users returning users.map(_.idx) into((user, idx) => user.copy(idx = idx))) +=
       user.copy(password = Some(BCrypt.hashpw(user.password.get, BCrypt.gensalt())), createAt = Some(LocalDateTime.now()))
 
@@ -44,12 +44,12 @@ class UserDataAccess @Inject()(protected val dbConfigProvider: DatabaseConfigPro
     db.run(users.result)
   }
 
-  def userCheck(user: User): Future[Option[User]] = {
+  def userCheck(user: User): Future[User] = {
     db.run {
       users.filter{_.email === user.email}.result.headOption
     } map {
-      case Some(u) if BCrypt.checkpw(user.password.get, u.password.get) => Some(u)
-      case _ => None
+      case Some(u) if BCrypt.checkpw(user.password.get, u.password.get) => u
+      case _ => null
     }
   }
 

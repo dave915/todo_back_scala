@@ -21,31 +21,25 @@ class GroupController @Inject()(auth: SecuredAuthenticator,
     }
   }
 
-  def addGroup = auth.JWTAuthentication { implicit  request =>
+  def addGroup = auth.JWTAuthentication.async { implicit  request =>
     val group = request.body.asJson.get.as[Group]
     val userIdx = request.user.idx.get
 
-    try {
-      groupService.addGroup(group, userIdx)
-      Ok(Json.toJson(Map("result" -> "success")))
-    } catch {
-      case e : Exception =>
-        println(e)
-        BadRequest(Json.toJson(Map("result" -> "fail")))
-    }
+    groupService.addGroup(group, userIdx)
+      .map( _ => Ok(Json.toJson(Map("result" -> "success"))))
+      .recover {
+        case e: Exception => BadRequest(Json.toJson(Map("result" -> "fail")))
+      }
   }
 
-  def updateGroup = auth.JWTAuthentication { implicit request =>
+  def updateGroup = auth.JWTAuthentication.async { implicit request =>
     val group = request.body.asJson.get.as[Group]
 
-    try {
-      groupService.updateGroup(group)
-      Ok(Json.toJson(Map("result" -> "success")))
-    } catch {
-      case e : Exception =>
-        println(e)
-        BadRequest(Json.toJson(Map("result" -> "fail")))
-    }
+    groupService.updateGroup(group)
+      .map( _ => Ok(Json.toJson(Map("result" -> "success"))))
+      .recover {
+        case e: Exception => BadRequest(Json.toJson(Map("result" -> "fail")))
+      }
   }
 
   def getJoinUsers(groupIdx: Int) = auth.JWTAuthentication.async { implicit request =>
@@ -54,69 +48,63 @@ class GroupController @Inject()(auth: SecuredAuthenticator,
     }
   }
 
-  def inviteUser(groupIdx: Int, userIdx: Int) = auth.JWTAuthentication { implicit request =>
-    try {
-      groupService.inviteUser(groupIdx, userIdx, request.user.idx.get)
-      Ok(Json.toJson(Map("result" -> "success")))
-    } catch {
-      case e : Exception =>
-        println(e)
-        BadRequest(Json.toJson(Map("result" -> "fail")))
-    }
+  def inviteUser(groupIdx: Int, userIdx: Int) = auth.JWTAuthentication.async { implicit request =>
+    groupService.inviteUser(groupIdx, userIdx, request.user.idx.get)
+      .map( _ => Ok(Json.toJson(Map("result" -> "success"))))
+      .recover {
+        case e: Exception =>
+          println(e)
+          BadRequest(Json.toJson(Map("result" -> "fail")))
+      }
   }
 
-  def checkInvite(inviteCode: String) = Action { implicit request =>
-    try {
-      groupService.checkInvite(inviteCode)
-      Ok(Json.toJson(Map("result" -> "success")))
-    } catch {
-      case e : Exception =>
-        println(e)
-        BadRequest(Json.toJson(Map("result" -> "fail")))
-    }
+  def checkInvite(inviteCode: String) = Action.async { implicit request =>
+    groupService.checkInvite(inviteCode)
+      .map( _ => Ok(Json.toJson(Map("result" -> "success"))))
+      .recover {
+        case e: Exception =>
+          println(e)
+          BadRequest(Json.toJson(Map("result" -> "fail")))
+      }
   }
 
-  def joinGroup(groupIdx: Int, userIdx:Int) = auth.JWTAuthentication { implicit request =>
-    try {
-      groupService.joinGroup(groupIdx, userIdx)
-      Ok(Json.toJson(Map("result" -> "success")))
-    } catch {
-      case e : Exception =>
-        println(e)
-        BadRequest(Json.toJson(Map("result" -> "fail")))
-    }
+  def joinGroup(groupIdx: Int, userIdx:Int) = auth.JWTAuthentication.async { implicit request =>
+    groupService.joinGroup(groupIdx, userIdx)
+      .map( _ => Ok(Json.toJson(Map("result" -> "success"))))
+      .recover {
+        case e: Exception =>
+          println(e)
+          BadRequest(Json.toJson(Map("result" -> "fail")))
+      }
   }
 
-  def passGroupOwner(groupIdx: Int, userIdx: Int) = auth.JWTAuthentication { implicit request =>
-    try {
-      groupService.passGroupOwner(groupIdx, userIdx, request.user.idx.get)
-      Ok(Json.toJson(Map("result" -> "success")))
-    } catch {
-      case e : Exception =>
-        println(e)
-        BadRequest(Json.toJson(Map("result" -> "fail")))
-    }
+  def passGroupOwner(groupIdx: Int, userIdx: Int) = auth.JWTAuthentication.async { implicit request =>
+    groupService.passGroupOwner(groupIdx, userIdx, request.user.idx.get)
+      .map( _ => Ok(Json.toJson(Map("result" -> "success"))))
+      .recover {
+        case e: Exception =>
+          println(e)
+          BadRequest(Json.toJson(Map("result" -> "fail")))
+      }
   }
 
-  def leaveGroup(groupIdx: Int) = auth.JWTAuthentication { implicit request =>
-    try {
-      groupService.leaveGroup(groupIdx, request.user.idx.get)
-      Ok(Json.toJson(Map("result" -> "success")))
-    } catch {
-      case e : Exception =>
-        println(e)
-        BadRequest(Json.toJson(Map("result" -> "fail")))
-    }
+  def leaveGroup(groupIdx: Int) = auth.JWTAuthentication.async { implicit request =>
+    groupService.leaveGroup(groupIdx, request.user.idx.get)
+      .map( _ => Ok(Json.toJson(Map("result" -> "success"))))
+      .recover {
+        case e: Exception =>
+          println(e)
+          BadRequest(Json.toJson(Map("result" -> "fail")))
+      }
   }
 
-  def banishUser(groupIdx: Int, userIdx: Int) = auth.JWTAuthentication { implicit request =>
-    try {
-      groupService.banishUser(groupIdx, userIdx, request.user.idx.get)
-      Ok(Json.toJson(Map("result" -> "success")))
-    } catch {
-      case e : Exception =>
-        println(e)
-        BadRequest(Json.toJson(Map("result" -> "fail")))
-    }
+  def banishUser(groupIdx: Int, userIdx: Int) = auth.JWTAuthentication.async { implicit request =>
+    groupService.banishUser(groupIdx, userIdx, request.user.idx.get)
+      .map( _ => Ok(Json.toJson(Map("result" -> "success"))))
+      .recover {
+        case e: Exception =>
+          println(e)
+          BadRequest(Json.toJson(Map("result" -> "fail")))
+      }
   }
 }

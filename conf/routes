@@ -7,7 +7,7 @@
 GET     /                           controllers.HomeController.index
 
 # auth
-POST    /signin                     controllers.AuthController.signIn
+POST    /signup                     controllers.AuthController.signUp
 POST    /login                      controllers.AuthController.login
 GET     /logout                     controllers.AuthController.logout
 GET     /userInfo                   controllers.AuthController.currentUserInfo

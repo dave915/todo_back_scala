@@ -6,18 +6,17 @@ import javax.inject.Inject
 import models.{JwtPayload, User, UserDataAccess}
 import play.api.libs.json.{Json, OFormat}
 import play.api.mvc._
-import redis.clients.jedis.{Jedis, JedisPool}
-import utils.JwtUtils
+import utils.{JedisUtils, JwtUtils}
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 case class UserRequest[A](user: User, request: Request[A]) extends WrappedRequest(request)
 
-class SecuredAuthenticator @Inject()(cc: ControllerComponents,
-                                     implicit val ec: ExecutionContext,
-                                     userDataAccess: UserDataAccess,
-                                     jedisPool: JedisPool) extends AbstractController(cc) {
+class SecuredAuthenticator @Inject()(private val cc: ControllerComponents,
+                                     private val userDataAccess: UserDataAccess,
+                                     private val jedisUtils: JedisUtils,
+                                     implicit val ec: ExecutionContext) extends AbstractController(cc) {
 
   implicit val formatUserDetails: OFormat[User] = Json.format[User]
 
@@ -34,14 +33,11 @@ class SecuredAuthenticator @Inject()(cc: ControllerComponents,
     }
 
     // redis 저장
-    var jedis: Option[Jedis] = None
-    try {
-      jedis = Some(jedisPool.getResource)
-      jedis.get.set(String.format(REDIS_REFRESH_TOKEN_KEY, userIdx.toString), refreshToken)
-      jedis.get.expire(String.format(REDIS_REFRESH_TOKEN_KEY, userIdx.toString), REFRESH_TOKEN_EXPIRE_TIME_MILLIS / 1000)
-    } finally {
-      if(jedis.nonEmpty) jedis.get.close()
-    }
+    jedisUtils.setWithExpire(
+      String.format(REDIS_REFRESH_TOKEN_KEY, userIdx.toString),
+      refreshToken,
+      REFRESH_TOKEN_EXPIRE_TIME_MILLIS / 1000
+    )
   }
 
   def makeNewRefreshToken(expireTime: Long): String = {
@@ -62,16 +58,10 @@ class SecuredAuthenticator @Inject()(cc: ControllerComponents,
 
   def getNewToken(jwtPayload: JwtPayload): Option[String] = {
     var refreshToken: Option[String] = None
-    var jedis: Option[Jedis] = None
     var orgRefreshToken: Option[String] = None
 
-    try {
-      jedis = Some(jedisPool.getResource)
-      orgRefreshToken = Option(jedis.get.get(String.format(REDIS_REFRESH_TOKEN_KEY, jwtPayload.idx.get.toString)))
-        .fold(getDbRefreshToken(jwtPayload)) { token => Some(token) }
-    } finally {
-      if(jedis.isDefined) jedis.get.close()
-    }
+    orgRefreshToken = Option(jedisUtils.get(String.format(REDIS_REFRESH_TOKEN_KEY, jwtPayload.idx.get.toString)))
+      .fold(getDbRefreshToken(jwtPayload)) { token => Some(token) }
 
     if(orgRefreshToken.isDefined) {
       val expireTime = orgRefreshToken.get.split("-")(5).toLong

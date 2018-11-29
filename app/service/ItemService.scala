@@ -32,17 +32,20 @@ class ItemService @Inject()(private val itemDataAccess: ItemDataAccess,
     itemDataAccess.save(saveItem)
   }
 
-  def addRepeatItem(item: Item): Any = {
+  def addRepeatItem(item: Item) = {
     val nextItemDateTime = item.repeatType.get match {
-      case 1 => item.itemDatetime.get.plusDays(1)
-      case 2 => item.itemDatetime.get.plusWeeks(1)
-      case 3 => item.itemDatetime.get.plusMonths(1)
-      case 4 => item.itemDatetime.get.plusYears(1)
-      case _ => null
+      case 1 => Some(item.itemDatetime.get.plusDays(1))
+      case 2 => Some(item.itemDatetime.get.plusWeeks(1))
+      case 3 => Some(item.itemDatetime.get.plusMonths(1))
+      case 4 => Some(item.itemDatetime.get.plusYears(1))
+      case _ => None
     }
 
-    if(nextItemDateTime != null)
-      itemDataAccess.save(item.copy(idx = None, status = Some(1), itemDatetime = Some(nextItemDateTime), createAt = Some(LocalDateTime.now())))
+    nextItemDateTime fold {
+      throw new RuntimeException("save repeat item error.")
+    } {
+      itemDataAccess.save(item.copy(idx = None, status = Some(1), itemDatetime = nextItemDateTime, createAt = Some(LocalDateTime.now())))
+    }
   }
 
   def delete(idx: Int): Future[Int] = {

@@ -7,6 +7,7 @@ import play.api.mvc._
 import service.AuthService
 
 import scala.concurrent.ExecutionContext
+import scala.util.{Failure, Success, Try}
 
 /**
   * @author dave.th
@@ -18,33 +19,24 @@ class AuthController @Inject()(auth: SecuredAuthenticator,
                                cc: ControllerComponents,
                                implicit val ec: ExecutionContext) extends AbstractController(cc) {
 
-  def signIn = Action { implicit request =>
+  def signUp = Action { implicit request =>
     val user = request.body.asJson.get.as[User]
 
-    try {
-      authService.signIn(user)
-      Ok(Json.toJson(Map("result" -> "success")))
-    } catch {
-      case e : Exception =>
-        println(e)
-        BadRequest(Json.toJson(Map("result" -> "fail")))
+    Try(authService.signUp(user)) match {
+      case Success(_) => Ok(Json.obj("result" -> "success"))
+      case Failure(_) => BadRequest(Json.obj("result" -> "fail"))
     }
   }
 
   def login = Action.async { implicit request =>
     val user = request.body.asJson.get.as[User]
 
-    authService.userCheck(user) map { user =>
-      if (user.isEmpty) {
-        Unauthorized(Json.toJson(Map("result" -> "fail")))
-      } else {
-        val userInfo = user.get
-        auth.setUserRefreshToken(userInfo.idx.get)
-        Ok(Json.toJson(Map("result" -> "success"))).withCookies(
-          Cookie("jwt_token", auth.makeNewJwtToken(userInfo))
+    authService.userCheck(user) map {
+      case null => Unauthorized(Json.obj("result" -> "fail"))
+      case u : User => auth.setUserRefreshToken(u.idx.get)
+        Ok(Json.obj("result" -> "success")).withCookies(
+          Cookie("jwt_token", auth.makeNewJwtToken(u))
         )
-
-      }
     }
   }
 

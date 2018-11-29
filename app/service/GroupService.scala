@@ -2,14 +2,10 @@ package service
 
 import java.util.UUID
 
-import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper}
-import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
 import javax.inject.{Inject, Singleton}
 import models._
 import play.api.libs.json.Json
-import redis.clients.jedis.{Jedis, JedisPool}
-import utils.MailUtils
+import utils.{JedisUtils, MailUtils}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -17,7 +13,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class GroupService @Inject()(private val groupDataAccess: GroupDataAccess,
                              private val joinGroupDataAccess: JoinGroupDataAccess,
                              private val userDataAccess: UserDataAccess,
-                             private val jedisPool: JedisPool,
+                             private val jedisUtils: JedisUtils,
                              private val mailUtils: MailUtils,
                              implicit val ec: ExecutionContext) {
   val REDIS_INVITE_GROUP_TOKEN_KEY = "deTodoBack:inviteGroupToken:%s"
@@ -32,9 +28,9 @@ class GroupService @Inject()(private val groupDataAccess: GroupDataAccess,
     }
   }
 
-  def addGroup(group: Group, idx: Int): Unit = {
-    groupDataAccess.insert(group.name.get, isDefaultGroup = false).onComplete { group =>
-      joinGroupDataAccess.save(JoinGroup(group.get.idx.get, idx, 1))
+  def addGroup(group: Group, idx: Int) = {
+    groupDataAccess.insert(group.name.get, isDefaultGroup = false) map { group =>
+      joinGroupDataAccess.save(JoinGroup(group.idx.get, idx, 1))
     }
   }
 
@@ -51,34 +47,42 @@ class GroupService @Inject()(private val groupDataAccess: GroupDataAccess,
   }
 
   def inviteUser(groupIdx: Int, userIdx: Int, requestUserId: Int) = {
-    val inviteUser = for {
+    for {
       currentUser <- joinGroupDataAccess.checkJoinUser(groupIdx, requestUserId)
-      if currentUser.`type` == 1
+      if currentUser.get.`type` == 1
       joinUser <- joinGroupDataAccess.checkJoinUser(groupIdx, userIdx)
-    } yield joinUser
+      result <- inviteGroup(joinUser, userIdx, groupIdx)
+    } yield result
+  }
 
-    // TODO: 에러 메세지 안나감
-    inviteUser.onComplete(result => {
-      if (result.toOption.isEmpty) {
+  def inviteGroup(joinGroup: Option[JoinGroup], userIdx: Int, groupIdx: Int) = {
+    joinGroup match {
+      case None => {
         val inviteInfo = for {
           user <- userDataAccess.findByIdx(userIdx)
           group <- groupDataAccess.findByIdx(groupIdx)
         } yield (user, group)
 
         inviteInfo map { info =>
-          joinGroupDataAccess.save(JoinGroup(groupIdx, info._1.idx.get, 3))
-          val inviteCode = getInviteCode(JoinGroup(groupIdx, info._1.idx.get, 2))
-          val inviteConfirmLink = String.format(GROUP_INVITE_URL, inviteCode)
-          mailUtils.sendMail(info._1.email.get, GROUP_INVITE_SUBJECT, views.html.groupInvite(info._2.name.get, inviteConfirmLink).toString())
+          try {
+            val inviteCode = getInviteCode(JoinGroup(groupIdx, info._1.idx.get, 2))
+            val inviteConfirmLink = String.format(GROUP_INVITE_URL, inviteCode)
+            mailUtils.sendMail(Seq(info._1.email.get), GROUP_INVITE_SUBJECT, views.html.groupInvite(info._2.name.get, inviteConfirmLink).toString())
+            joinGroupDataAccess.save(JoinGroup(groupIdx, info._1.idx.get, 3))
+          } catch {
+            case e : Exception =>
+              throw new RuntimeException("Please check email")
+          }
         }
-      } else {
-        throw new RuntimeException("already group user")
       }
-    })
+      case _ => throw new RuntimeException("Already group user")
+    }
   }
 
   def checkInvite(inviteCode: String) = {
-    Option(checkInviteCode(inviteCode)) map { joinGroup =>
+    checkInviteCode(inviteCode).fold {
+      throw new RuntimeException("Unidentifiable code")
+    } { joinGroup =>
       joinGroupDataAccess.save(joinGroup)
     }
   }
@@ -92,10 +96,10 @@ class GroupService @Inject()(private val groupDataAccess: GroupDataAccess,
     joinGroupDataAccess.save(JoinGroup(groupIdx, ownerIdx, 2))
   }
 
-  def leaveGroup(groupIdx: Int, userIdx: Int): Unit = {
+  def leaveGroup(groupIdx: Int, userIdx: Int) = {
     val newOwner: Future[User] = for {
       currentUser <- joinGroupDataAccess.checkJoinUser(groupIdx, userIdx)
-      if currentUser.`type` == 1
+      if currentUser.get.`type` == 1
       users <- joinGroupDataAccess.getJoinUsers(groupIdx)
     } yield users.filter(!_._1.idx.equals(Option(userIdx))).minBy(_._2.createAt.toString)._1
 
@@ -103,48 +107,26 @@ class GroupService @Inject()(private val groupDataAccess: GroupDataAccess,
     joinGroupDataAccess.delete(groupIdx, userIdx)
   }
 
-  def banishUser(groupIdx: Int, userIdx: Int, requestUserId: Int): Unit = {
+  def banishUser(groupIdx: Int, userIdx: Int, requestUserId: Int) = {
     for {
       currentUser <- joinGroupDataAccess.checkJoinUser(groupIdx, requestUserId)
-      if currentUser.`type` == 1
+      if currentUser.get.`type` == 1
       result <- joinGroupDataAccess.delete(groupIdx, userIdx)
     } yield result
   }
 
   def getInviteCode(joinInfo: JoinGroup): String = {
     val randomToken = UUID.randomUUID().toString.replaceAll("-", "")
-
-    var jedis: Option[Jedis] = None
-    try {
-      jedis = Some(jedisPool.getResource)
-      val objectMapper = new ObjectMapper() with ScalaObjectMapper //TODO: json utils로 따로 뺄 예정
-      objectMapper.registerModule(DefaultScalaModule)
-      objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-      val objectString = objectMapper.writeValueAsString(joinInfo)
-      jedis.get.set(String.format(REDIS_INVITE_GROUP_TOKEN_KEY, randomToken), objectString)
-    } finally {
-      if(jedis.nonEmpty) jedis.get.close()
-    }
+    jedisUtils.set(String.format(REDIS_INVITE_GROUP_TOKEN_KEY, randomToken), joinInfo)
 
     randomToken
   }
 
   def checkInviteCode(inviteCode: String) = {
-    var jedis: Option[Jedis] = None
     var joinGroup:JoinGroup = null
-    try {
-      jedis = Some(jedisPool.getResource)
-      val objectMapper = new ObjectMapper() with ScalaObjectMapper //TODO: json utils로 따로 뺄 예정
-      objectMapper.registerModule(DefaultScalaModule)
-      objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-
-      Option(jedis.get.get(String.format(REDIS_INVITE_GROUP_TOKEN_KEY, inviteCode))) map { jsonString =>
-        joinGroup = Json.parse(jsonString).as[JoinGroup]
-      }
-    } finally {
-      if(jedis.nonEmpty) jedis.get.close()
+    Option(jedisUtils.get(String.format(REDIS_INVITE_GROUP_TOKEN_KEY, inviteCode))) foreach { str =>
+      joinGroup = Json.parse(str).as[JoinGroup]
     }
-
-    joinGroup
+    Option(joinGroup)
   }
 }

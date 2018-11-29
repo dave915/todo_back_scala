@@ -15,14 +15,14 @@ class AuthService @Inject()(private val userDataAccess: UserDataAccess,
                             private val joinGroupDataAccess: JoinGroupDataAccess,
                             implicit val ec: ExecutionContext){
 
-  def signIn(user: User) = {
+  def signUp(user: User) = {
     for {
-      newUser <- userDataAccess.signIn(user)
+      newUser <- userDataAccess.signUp(user)
       group <- groupDataAccess.insert(newUser.email.get, isDefaultGroup = true)
     } yield joinGroupDataAccess.save(JoinGroup(group.idx.get, newUser.idx.get, 1))
   }
 
-  def userCheck(user: User): Future[Option[User]] = {
+  def userCheck(user: User): Future[User] = {
     userDataAccess.userCheck(user)
   }
 }

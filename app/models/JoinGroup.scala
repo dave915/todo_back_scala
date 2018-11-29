@@ -1,7 +1,6 @@
 package models
 
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 import javax.inject.{Inject, Singleton}
 import slick.lifted.Tag
@@ -25,7 +24,7 @@ class JoinGroupDataAccess @Inject()(protected val dbConfigProvider: DatabaseConf
   val joinGroups = TableQuery[JoinGroups]
   val users = TableQuery[Users]
 
-  def save(joinGroup: JoinGroup): Unit = {
+  def save(joinGroup: JoinGroup) = {
     db.run(joinGroups insertOrUpdate joinGroup)
   }
 
@@ -47,7 +46,7 @@ class JoinGroupDataAccess @Inject()(protected val dbConfigProvider: DatabaseConf
       joinGroups.groupIdx === groupIdx &&
         joinGroups.userIdx === userIdx)
 
-    db.run(query.result.head)
+    db.run(query.result.headOption)
   }
 }
 
