@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper}
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
 import javax.inject.{Inject, Singleton}
+import play.Logger
 import redis.clients.jedis.{Jedis, JedisPool}
 
 /**
@@ -23,7 +24,7 @@ class JedisUtils @Inject()(private val jedisPool: JedisPool) {
 
       jedis.get.set(key, objectString)
     } catch {
-      case e : Exception => println(e)
+      case e : Exception => Logger.debug("redis set error : {}", e)
     } finally {
       if(jedis.nonEmpty) jedis.get.close()
     }
@@ -34,9 +35,11 @@ class JedisUtils @Inject()(private val jedisPool: JedisPool) {
     var result: Option[String] = None
     try {
       jedis = Some(jedisPool.getResource)
-      result = Some(jedis.get.get(key))
+      val redisValue = jedis.get.get(key)
+      if(redisValue != null)
+        result = Some(redisValue)
     } catch {
-      case e : Exception => println(e)
+      case e : Exception => Logger.debug("redis get error : {}", e)
     } finally {
       if(jedis.nonEmpty) jedis.get.close()
     }
@@ -56,7 +59,7 @@ class JedisUtils @Inject()(private val jedisPool: JedisPool) {
       jedis.get.set(key, objectString)
       jedis.get.expire(key, second)
     } catch {
-      case e : Exception => println(e)
+      case e : Exception => Logger.debug("redis setWithExpire error : {}", e)
     } finally {
       if(jedis.nonEmpty) jedis.get.close()
     }
