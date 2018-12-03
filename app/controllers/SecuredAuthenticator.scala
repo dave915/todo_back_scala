@@ -60,11 +60,11 @@ class SecuredAuthenticator @Inject()(private val cc: ControllerComponents,
     var refreshToken: Option[String] = None
     var orgRefreshToken: Option[String] = None
 
-    orgRefreshToken = Option(jedisUtils.get(String.format(REDIS_REFRESH_TOKEN_KEY, jwtPayload.idx.get.toString)))
+    orgRefreshToken = jedisUtils.get(String.format(REDIS_REFRESH_TOKEN_KEY, jwtPayload.idx.get.toString))
       .fold(getDbRefreshToken(jwtPayload)) { token => Some(token) }
 
     if(orgRefreshToken.isDefined) {
-      val expireTime = orgRefreshToken.get.split("-")(5).toLong
+      val expireTime = orgRefreshToken.get.replaceAll("\"", "").split("-")(5).toLong
       val user = User(jwtPayload.idx, jwtPayload.userName, None, jwtPayload.email, None, None)
       if (!isExpireToken(new Date(expireTime)))
         refreshToken = Some(makeNewJwtToken(user))

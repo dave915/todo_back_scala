@@ -124,7 +124,7 @@ class GroupService @Inject()(private val groupDataAccess: GroupDataAccess,
 
   def checkInviteCode(inviteCode: String) = {
     var joinGroup:JoinGroup = null
-    Option(jedisUtils.get(String.format(REDIS_INVITE_GROUP_TOKEN_KEY, inviteCode))) foreach { str =>
+    jedisUtils.get(String.format(REDIS_INVITE_GROUP_TOKEN_KEY, inviteCode)) foreach { str =>
       joinGroup = Json.parse(str).as[JoinGroup]
     }
     Option(joinGroup)

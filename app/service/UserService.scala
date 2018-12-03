@@ -59,7 +59,7 @@ class UserService @Inject()(private val userDataAccess: UserDataAccess,
 
   def getChangeUserIdx(changeCode:String) = {
     var userIdx:String = ""
-    Option(jedisUtils.get(String.format(REDIS_CHANGE_PASSWORD_USER_IDX_KEY, changeCode))) foreach { str =>
+    jedisUtils.get(String.format(REDIS_CHANGE_PASSWORD_USER_IDX_KEY, changeCode)) foreach { str =>
       userIdx = str
     }
 

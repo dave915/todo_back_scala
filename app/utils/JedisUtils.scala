@@ -22,17 +22,21 @@ class JedisUtils @Inject()(private val jedisPool: JedisPool) {
       val objectString = objectMapper.writeValueAsString(obj)
 
       jedis.get.set(key, objectString)
+    } catch {
+      case e : Exception => println(e)
     } finally {
       if(jedis.nonEmpty) jedis.get.close()
     }
   }
 
-  def get(key: String): String = {
+  def get(key: String): Option[String] = {
     var jedis: Option[Jedis] = None
-    var result: String = ""
+    var result: Option[String] = None
     try {
       jedis = Some(jedisPool.getResource)
-      result = jedis.get.get(key)
+      result = Some(jedis.get.get(key))
+    } catch {
+      case e : Exception => println(e)
     } finally {
       if(jedis.nonEmpty) jedis.get.close()
     }
@@ -51,6 +55,8 @@ class JedisUtils @Inject()(private val jedisPool: JedisPool) {
 
       jedis.get.set(key, objectString)
       jedis.get.expire(key, second)
+    } catch {
+      case e : Exception => println(e)
     } finally {
       if(jedis.nonEmpty) jedis.get.close()
     }
