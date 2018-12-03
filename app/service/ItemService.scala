@@ -41,10 +41,10 @@ class ItemService @Inject()(private val itemDataAccess: ItemDataAccess,
       case _ => None
     }
 
-    nextItemDateTime fold {
-      throw new RuntimeException("save repeat item error.")
-    } {
+    if(nextItemDateTime.isDefined) {
       itemDataAccess.save(item.copy(idx = None, status = Some(1), itemDatetime = nextItemDateTime, createAt = Some(LocalDateTime.now())))
+    } else {
+      throw new RuntimeException("save repeat item error.")
     }
   }
 
