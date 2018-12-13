@@ -15,7 +15,7 @@ GET     /userInfo                   controllers.AuthController.currentUserInfo
 #user
 GET     /users                      controllers.UserController.searchUser(keyword:String)
 PUT     /users                      controllers.UserController.save
-GET     /temp/users/password/mail        controllers.UserController.sendChangePasswordMail
+GET     /users/password/mail        controllers.UserController.sendChangePasswordMail
 GET     /users/password/:changeCode controllers.UserController.getChangePasswordUser(changeCode:String)
 
 # item
@@ -32,7 +32,7 @@ PUT     /group                      controllers.GroupController.updateGroup
 GET     /group/:groupIdx/users      controllers.GroupController.getJoinUsers(groupIdx:Int)
 
 # joinGroup
-POST    /temp/group/invite/:groupIdx/:userIdx    controllers.GroupController.inviteUser(groupIdx:Int, userIdx:Int)
+POST    /group/invite/:groupIdx/:userIdx    controllers.GroupController.inviteUser(groupIdx:Int, userIdx:Int)
 GET     /group/invite/:inviteCode           controllers.GroupController.checkInvite(inviteCode:String)
 PUT     /group/join/:groupIdx/:userIdx      controllers.GroupController.joinGroup(groupIdx:Int, userIdx:Int)
 PUT     /group/pass/:groupIdx/:userIdx      controllers.GroupController.passGroupOwner(groupIdx:Int, userIdx:Int)
