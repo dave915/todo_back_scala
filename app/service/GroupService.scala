@@ -4,6 +4,7 @@ import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
 import models._
+import play.api.Configuration
 import play.api.libs.json.Json
 import utils.{JedisUtils, MailUtils}
 
@@ -15,9 +16,10 @@ class GroupService @Inject()(private val groupDataAccess: GroupDataAccess,
                              private val userDataAccess: UserDataAccess,
                              private val jedisUtils: JedisUtils,
                              private val mailUtils: MailUtils,
+                             private val config: Configuration,
                              implicit val ec: ExecutionContext) {
   val REDIS_INVITE_GROUP_TOKEN_KEY = "deTodoBack:inviteGroupToken:%s"
-  val GROUP_INVITE_URL = "http://localhost:8080/#/invite/group/%s" // 설정으로 뺄 예정
+  val GROUP_INVITE_URL = "%s/#/invite/group/%s" // 설정으로 뺄 예정
   val GROUP_INVITE_SUBJECT = "<우리 오늘 뭐해?> 그룹초대"
 
   def getJoinGroupByUserIdx(idx: Int): Future[Seq[GroupInfo]] = {
@@ -66,7 +68,7 @@ class GroupService @Inject()(private val groupDataAccess: GroupDataAccess,
         inviteInfo map { info =>
           try {
             val inviteCode = getInviteCode(JoinGroup(groupIdx, info._1.idx.get, 2))
-            val inviteConfirmLink = String.format(GROUP_INVITE_URL, inviteCode)
+            val inviteConfirmLink = String.format(GROUP_INVITE_URL, config.underlying.getString("todo.host"), inviteCode)
             mailUtils.sendMail(Seq(info._1.email.get), GROUP_INVITE_SUBJECT, views.html.groupInvite(info._2.name.get, inviteConfirmLink).toString())
             joinGroupDataAccess.save(JoinGroup(groupIdx, info._1.idx.get, 3))
           } catch {

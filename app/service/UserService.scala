@@ -4,6 +4,7 @@ import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
 import models.{User, UserDataAccess}
+import play.api.Configuration
 import utils.{JedisUtils, MailUtils}
 
 import scala.concurrent.ExecutionContext
@@ -16,9 +17,10 @@ import scala.concurrent.ExecutionContext
 class UserService @Inject()(private val userDataAccess: UserDataAccess,
                             private val jedisUtils: JedisUtils,
                             private val mailUtils: MailUtils,
+                            private val config: Configuration,
                             implicit val ec: ExecutionContext) {
   val REDIS_CHANGE_PASSWORD_USER_IDX_KEY = "deTodoBack:changePasswordUser:%s"
-  val CHANGE_PASSWORD_URL = "http://localhost:8080/#/changePassword/%s" // 설정으로 뺄 예정
+  val CHANGE_PASSWORD_URL = "%s/#/changePassword/%s" // 설정으로 뺄 예정
   val CHANGE_PASSWORD_SUBJECT = "<우리 오늘 뭐해?> 비밀번호 재설정"
 
   def searchUser(keyword: String) = {
@@ -40,7 +42,7 @@ class UserService @Inject()(private val userDataAccess: UserDataAccess,
 
       val user = users.head
       val randomCode = getChangeCode(user)
-      val changePasswordLink = String.format(CHANGE_PASSWORD_URL, randomCode)
+      val changePasswordLink = String.format(CHANGE_PASSWORD_URL, config.underlying.getString("todo.host"), randomCode)
       mailUtils.sendMail(Seq(email), CHANGE_PASSWORD_SUBJECT, views.html.changePassword(changePasswordLink).toString())
     }
   }
@@ -60,7 +62,7 @@ class UserService @Inject()(private val userDataAccess: UserDataAccess,
   def getChangeUserIdx(changeCode:String) = {
     var userIdx:String = ""
     jedisUtils.get(String.format(REDIS_CHANGE_PASSWORD_USER_IDX_KEY, changeCode)) foreach { str =>
-      userIdx = str
+      userIdx = str.replaceAll("\"", "")
     }
 
     userIdx
