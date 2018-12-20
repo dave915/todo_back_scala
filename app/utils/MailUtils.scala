@@ -15,7 +15,7 @@ class MailUtils @Inject()(mailerClient: MailerClient) extends SendMail {
 
   override def sendMail(to: Seq[String], subject: String, message: String) = {
     val email = Email(
-      from = s"우리오늘뭐해? <de-todo@daum.net>",
+      from = s"우리오늘뭐해? <dkt.de.todo@gmail.com>",
       to = to,
       subject = subject,
       bodyHtml = Some(message)
