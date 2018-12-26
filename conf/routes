@@ -17,6 +17,7 @@ GET     /users                      controllers.UserController.searchUser(keywor
 PUT     /users                      controllers.UserController.save
 GET     /users/password/mail        controllers.UserController.sendChangePasswordMail
 GET     /users/password/:changeCode controllers.UserController.getChangePasswordUser(changeCode:String)
+GET     /users/email                controllers.UserController.checkEmail
 
 # item
 POST    /item                       controllers.ItemController.save

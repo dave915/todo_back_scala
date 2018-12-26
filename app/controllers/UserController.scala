@@ -33,6 +33,17 @@ class UserController @Inject()(implicit val auth: SecuredAuthenticator,
       }
   }
 
+  def checkEmail = Action.async { implicit  request =>
+    var email = ""
+    request.queryString.get("email").foreach(seq => email = seq.head)
+
+    userService.checkEmail(email)
+      .map { emails => Ok(Json.toJson(emails))}
+      .recover {
+        case e: Exception => BadRequest(Json.toJson(Map("result" -> "fail")))
+      }
+  }
+
   def sendChangePasswordMail = Action.async { implicit request =>
     var email = ""
     request.queryString.get("email").foreach(seq => email = seq.head)
